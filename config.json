@@ -1,0 +1,27 @@
+{
+  "name": "Media Manager",
+  "version": "1.0.0",
+  "slug": "media-manager",
+  "description": "A media managing add-on for Home Assistant",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "startup": "application",
+  "boot": "auto",
+  "init": false,
+  "map": ["media:rw", "share:rw"],
+  "ports": {
+    "8080/tcp": 8080
+  },
+  "ports_description": {
+    "8080/tcp": "Web interface"
+  },
+  "webui": "http://[HOST]:[PORT:8080]",
+  "options": {
+    "media_dir": "/media",
+    "share_dir": "/share"
+  },
+  "schema": {
+    "media_dir": "str",
+    "share_dir": "str"
+  },
+  "image": "ghcr.io/alimozdemir/{arch}-addon-media"
+}
