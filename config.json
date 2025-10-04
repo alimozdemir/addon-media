@@ -1,12 +1,13 @@
 {
     "name": "Home Assistant Add-on: Media",
     "description": "Media add-on for Home Assistant",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "slug": "media",
     "init": false,
     "panel_icon": "mdi:music",
     "panel_title": "Media",
     "ingress": true,
+    "ingress_port": 32200,
     "ports": {
         "80/tcp": "32200"
     },
@@ -16,5 +17,15 @@
         "armhf",
         "armv7",
         "i386"
+    ],
+    "map": [
+        {
+            "type": "share",
+            "read_only": false
+        },
+        {
+            "type": "media",
+            "read_only": false
+        }
     ]
 }
