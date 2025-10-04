@@ -1,13 +1,13 @@
 {
     "name": "Home Assistant Add-on: Media",
     "description": "Media add-on for Home Assistant",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "slug": "media",
     "init": false,
     "panel_icon": "mdi:music",
     "panel_title": "Media",
     "ingress": true,
-    "ingress_port": 32200,
+    "ingress_port": 80,
     "ports": {
         "80/tcp": "32200"
     },
