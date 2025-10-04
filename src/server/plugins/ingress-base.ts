@@ -31,8 +31,7 @@ export default (nitroApp: any) => {
       .replaceAll('href="/favicon.ico"', `href="${prefix}/favicon.ico"`)
       .replaceAll('href="/robots.txt"', `href="${prefix}/robots.txt"`)
 
-    // Update embedded Nuxt runtime config baseURL so the client router uses the prefixed base
-    body = body.replace(/"baseURL":"\//g, `"baseURL":"${prefix}/`)
+    // In SPA mode, only rewrite asset URLs; avoid injecting scripts and modifying baseURL in HTML
 
     response.body = body
   })
