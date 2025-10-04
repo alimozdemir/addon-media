@@ -1,14 +1,6 @@
-// @ts-nocheck
 import { readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import os from 'node:os';
-
-type FileEntry = {
-    name: string;
-    path: string;
-    absolutePath: string;
-    type: 'file' | 'directory' | 'symlink' | 'other';
-};
+import { FileEntry } from '~~/types/files';
 
 type SimpleDirent = {
     name: string;
@@ -42,25 +34,20 @@ async function listDirEntries(baseDir: string, visibleRootLabel: string): Promis
 }
 
 export default defineEventHandler(async (event) => {
+    const utils = useFileUtils();
     try {
         const query = getQuery(event) as { root?: string; subpath?: string };
         const rootKey = (query.root || 'media').toLowerCase();
 
-        const allowedRoots: Record<string, string> = {
-            media: '/media',
-            share: '/share',
-            home: os.homedir(),
-        };
-
-        if (!Object.prototype.hasOwnProperty.call(allowedRoots, rootKey)) {
+        if (!Object.prototype.hasOwnProperty.call(utils.allowedRoots, rootKey)) {
             return {
                 root: rootKey,
                 paths: [],
-                error: `Invalid root. Use one of: ${Object.keys(allowedRoots).join(', ')}`,
+                error: `Invalid root. Use one of: ${Object.keys(utils.allowedRoots).join(', ')}`,
             };
         }
 
-        const baseDir = allowedRoots[rootKey];
+        const baseDir = utils.allowedRoots[rootKey];
         const subpath = typeof query.subpath === 'string' ? query.subpath : '';
         const requestedDir = resolve(join(baseDir, subpath));
 
