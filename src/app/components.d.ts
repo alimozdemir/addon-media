@@ -8,6 +8,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ICaretRight: typeof import('~icons/ph/caret-right')['default']
+    IFile: typeof import('~icons/ph/file')['default']
+    IFolder: typeof import('~icons/ph/folder')['default']
+    ILinkSimple: typeof import('~icons/ph/link-simple')['default']
+    IQuestion: typeof import('~icons/ph/question')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

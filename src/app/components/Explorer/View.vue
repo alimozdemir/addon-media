@@ -49,15 +49,20 @@ function handleNavigate(labelPath: string) {
 }
 </script>
 <template>
-    <section>
-        <Roots @select="handleSelectRoot" />
+    <section class="h-[min(80vh,700px)] border border-border rounded-[--radius] bg-card grid grid-cols-12 overflow-hidden">
+        <aside class="col-span-3 lg:col-span-2 border-r border-border bg-background min-h-0 overflow-auto">
+            <div class="px-3 py-2 border-b border-border text-xs uppercase tracking-wide text-muted-foreground">Locations</div>
+            <Roots @select="handleSelectRoot" />
+        </aside>
 
-        <div v-if="status === 'pending'">Loading...</div>
-        <div v-else-if="error">{{ error?.message || 'Failed to load' }}</div>
+        <main class="col-span-9 lg:col-span-10 p-4 min-h-0 min-w-0 overflow-auto">
+            <div class="mb-3 flex items-center justify-between">
+                <Breadcrumbs v-if="data?.root" :visible-root-label="data.root" @navigate="handleNavigate" />
+            </div>
 
-        <template v-else>
-            <Breadcrumbs v-if="data?.root" :visible-root-label="data.root" @navigate="handleNavigate" />
-            <List v-if="data?.paths" :entries="data.paths" @open="handleOpen" />
-        </template>
+            <div v-if="status === 'pending'" class="text-sm text-muted-foreground">Loading...</div>
+            <div v-else-if="error" class="text-sm text-destructive">{{ error?.message || 'Failed to load' }}</div>
+            <List v-else-if="data?.paths" :entries="data.paths" @open="handleOpen" />
+        </main>
     </section>
 </template>

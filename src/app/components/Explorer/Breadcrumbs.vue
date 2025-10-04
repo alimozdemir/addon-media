@@ -15,10 +15,16 @@ const segments = computed(() => {
 </script>
 
 <template>
-    <nav>
-        <span v-for="(s, i) in segments" :key="s.path">
-            <button type="button" @click="emit('navigate', s.path)">{{ s.label }}</button>
-            <span v-if="i < segments.length - 1"> / </span>
+    <nav class="flex items-center gap-1 text-sm text-muted-foreground">
+        <span v-for="(s, i) in segments" :key="s.path" class="flex items-center gap-1">
+            <button
+                type="button"
+                class="px-1.5 py-0.5 rounded hover:bg-muted text-foreground"
+                @click="emit('navigate', s.path)"
+            >
+                {{ s.label }}
+            </button>
+            <i-caret-right v-if="i < segments.length - 1" class="text-muted-foreground" />
         </span>
     </nav>
 </template>
