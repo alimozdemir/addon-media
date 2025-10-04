@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import ExplorerView from '../components/Explorer/View.vue';
+const router = useRouter();
+onMounted(() => {
+    router.replace('/files');
+});
 </script>
 
 <template>
-    <div>
-        <ExplorerView />
-    </div>
+    <div class="text-sm text-muted-foreground">Redirecting to Files...</div>
 </template>
