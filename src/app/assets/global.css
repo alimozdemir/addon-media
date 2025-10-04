@@ -1,1 +1,53 @@
 @import "tailwindcss";
+
+@theme {
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Radius */
+  --radius: 0.5rem;
+
+  /* Base (light) */
+  --color-background: oklch(98% 0 0);
+  --color-foreground: oklch(20% 0 0);
+
+  /* Surfaces */
+  --color-card: oklch(99% 0 0);
+  --color-card-foreground: var(--color-foreground);
+  --color-popover: var(--color-card);
+  --color-popover-foreground: var(--color-foreground);
+
+  /* Brand (black tones) */
+  --color-primary: oklch(22% 0 0); /* near-black */
+  --color-primary-foreground: oklch(99% 0 0);
+
+  /* Secondary & Muted */
+  --color-secondary: oklch(95% 0 0);
+  --color-secondary-foreground: var(--color-foreground);
+  --color-muted: oklch(94% 0 0);
+  --color-muted-foreground: oklch(55% 0 0);
+
+  /* Accent (subtle) */
+  --color-accent: oklch(93% 0 0);
+  --color-accent-foreground: var(--color-foreground);
+
+  /* Destructive (kept grayscale per request) */
+  --color-destructive: oklch(35% 0 0);
+  --color-destructive-foreground: oklch(98% 0 0);
+
+  /* UI chrome */
+  --color-border: oklch(90% 0 0);
+  --color-input: var(--color-border);
+  --color-ring: oklch(30% 0 0);
+}
+
+/* Base application colors */
+:root { color-scheme: light; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
