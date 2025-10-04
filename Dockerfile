@@ -21,11 +21,29 @@ WORKDIR /app
 # Only `.output` folder is needed from the build stage
 COPY --from=build /app/.output/ ./
 
-# Set environment variables for host and port
-ENV PORT=80
-ENV HOST=0.0.0.0
+# Install and configure Nginx as reverse proxy
+RUN apk add --no-cache nginx && \
+    mkdir -p /run/nginx /var/cache/nginx
+
+# Copy nginx configuration
+COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
+
+# Entrypoint script to run Node (on 3000) behind Nginx (on 80)
+COPY <<'SH' /entrypoint.sh
+#!/bin/sh
+set -e
+
+# Run Nuxt server on port 3000
+export PORT=3000
+export HOST=0.0.0.0
+node /app/server/index.mjs &
+
+# Start Nginx in foreground
+exec nginx -g 'daemon off;'
+SH
+
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
-# Start the Nuxt server
-CMD ["node", "/app/server/index.mjs"]
+CMD ["/entrypoint.sh"]
