@@ -1,7 +1,7 @@
 {
     "name": "Home Assistant Add-on: Media",
     "description": "Media add-on for Home Assistant",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "slug": "media",
     "init": false,
     "panel_icon": "mdi:music",
@@ -19,13 +19,7 @@
         "i386"
     ],
     "map": [
-        {
-            "type": "share",
-            "read_only": false
-        },
-        {
-            "type": "media",
-            "read_only": false
-        }
+        "share:rw",
+        "media:rw"
     ]
 }
