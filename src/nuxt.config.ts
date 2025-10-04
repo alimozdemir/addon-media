@@ -8,6 +8,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   css: ['~/assets/global.css'],
+  app: {
+    // Allow overriding baseURL via env for HA ingress
+    baseURL: process.env.NUXT_APP_BASE_URL || '/',
+  },
   vite: {
     plugins: [tailwindcss(),
 
