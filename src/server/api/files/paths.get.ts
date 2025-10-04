@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import os from 'node:os';
 
 type FileEntry = {
@@ -17,9 +17,8 @@ type SimpleDirent = {
     isSymbolicLink: () => boolean;
 };
 
-async function getHomeRootPaths(): Promise<FileEntry[]> {
-    const homeDir = os.homedir();
-    const dirents = (await readdir(homeDir, { withFileTypes: true })) as unknown as SimpleDirent[];
+async function listDirEntries(baseDir: string, visibleRootLabel: string): Promise<FileEntry[]> {
+    const dirents = (await readdir(baseDir, { withFileTypes: true })) as unknown as SimpleDirent[];
 
     const entries = dirents.map((dirent: SimpleDirent) => {
         let type: FileEntry['type'] = 'other';
@@ -27,12 +26,12 @@ async function getHomeRootPaths(): Promise<FileEntry[]> {
         else if (dirent.isFile()) type = 'file';
         else if (dirent.isSymbolicLink()) type = 'symlink';
 
-        const absolutePath = join(homeDir, dirent.name);
-        const tildePath = join('~', dirent.name).replace(/\\/g, '/');
+        const absolutePath = join(baseDir, dirent.name);
+        const apiPath = join(visibleRootLabel, dirent.name).replace(/\\/g, '/');
 
         return {
             name: dirent.name,
-            path: tildePath,
+            path: apiPath,
             absolutePath,
             type,
         };
@@ -44,11 +43,38 @@ async function getHomeRootPaths(): Promise<FileEntry[]> {
 
 export default defineEventHandler(async (event) => {
     try {
-        const paths = await getHomeRootPaths();
-        return { root: '~', paths };
+        const query = getQuery(event) as { root?: string; subpath?: string };
+        const rootKey = (query.root || 'media').toLowerCase();
+
+        const allowedRoots: Record<string, string> = {
+            media: '/media',
+            share: '/share',
+            home: os.homedir(),
+        };
+
+        if (!Object.prototype.hasOwnProperty.call(allowedRoots, rootKey)) {
+            return {
+                root: rootKey,
+                paths: [],
+                error: `Invalid root. Use one of: ${Object.keys(allowedRoots).join(', ')}`,
+            };
+        }
+
+        const baseDir = allowedRoots[rootKey];
+        const subpath = typeof query.subpath === 'string' ? query.subpath : '';
+        const requestedDir = resolve(join(baseDir, subpath));
+
+        // Prevent path traversal outside the baseDir
+        if (!requestedDir.startsWith(resolve(baseDir))) {
+            return { root: rootKey, paths: [], error: 'Path traversal is not allowed' };
+        }
+
+        const visibleRootLabel = rootKey === 'home' ? '~' : `/${rootKey}`;
+        const paths = await listDirEntries(requestedDir, visibleRootLabel);
+        return { root: visibleRootLabel, current: requestedDir, paths };
     } catch (error) {
         return {
-            root: '~',
+            root: '',
             paths: [],
             error: (error as Error).message,
         };
