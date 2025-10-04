@@ -36,8 +36,19 @@ async function listDirEntries(baseDir: string, visibleRootLabel: string): Promis
 export default defineEventHandler(async (event) => {
     const utils = useFileUtils();
     try {
-        const query = getQuery(event) as { root?: string; subpath?: string };
-        const rootKey = (query.root || 'media').toLowerCase();
+        const query = getQuery(event) as { path?: string };
+
+        // Require a single "path" param that includes root and optional subpath. e.g. "media/Tv" or "home/Media"
+        const pathParamRaw = (query.path || '').replace(/\\/g, '/');
+        if (!pathParamRaw) {
+            return {
+                root: '',
+                paths: [],
+                error: `Missing 'path' query parameter. Use one of roots: ${Object.keys(utils.allowedRoots).join(', ')} (e.g., path=media or path=home/Documents)`,
+            };
+        }
+        const [rawRootKey, ...rootRemainderParts] = pathParamRaw.split('/').filter(Boolean);
+        const rootKey = (rawRootKey || 'media').toLowerCase();
 
         if (!Object.prototype.hasOwnProperty.call(utils.allowedRoots, rootKey)) {
             return {
@@ -48,15 +59,22 @@ export default defineEventHandler(async (event) => {
         }
 
         const baseDir = utils.allowedRoots[rootKey];
-        const subpath = typeof query.subpath === 'string' ? query.subpath : '';
-        const requestedDir = resolve(join(baseDir, subpath));
+
+        const remainderFromRoot = rootRemainderParts.join('/');
+        const combinedSubpath = remainderFromRoot;
+
+        const requestedDir = resolve(join(baseDir, combinedSubpath));
 
         // Prevent path traversal outside the baseDir
         if (!requestedDir.startsWith(resolve(baseDir))) {
             return { root: rootKey, paths: [], error: 'Path traversal is not allowed' };
         }
 
-        const visibleRootLabel = rootKey === 'home' ? '~' : `/${rootKey}`;
+        const displaySubpath = combinedSubpath ? combinedSubpath.replace(/\\/g, '/') : '';
+        const visibleRootLabel = displaySubpath
+            ? (rootKey === 'home' ? `~/${displaySubpath}` : `/${rootKey}/${displaySubpath}`)
+            : (rootKey === 'home' ? '~' : `/${rootKey}`);
+
         const paths = await listDirEntries(requestedDir, visibleRootLabel);
         return { root: visibleRootLabel, current: requestedDir, paths };
     } catch (error) {

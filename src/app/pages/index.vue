@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { data, status, error } = useFetch('/api/files/paths?root=home');
+const { data, status, error } = useFetch('/api/files/paths?path=home');
 </script>
 
 <template>
