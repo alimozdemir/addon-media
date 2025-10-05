@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/global.css'],
   app: {
-    baseURL: './',
+    baseURL: './'
   },
   vite: {
     plugins: [tailwindcss(),
