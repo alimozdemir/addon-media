@@ -11,11 +11,11 @@ export default defineNuxtPlugin((nuxtApp) => {
   const prefixedFetch: typeof $fetch = ((input: any, init?: any) => {
     try {
       if (typeof input === 'string') {
-        if (input.startsWith('/')) {
+        if (input.startsWith('/') && !input.startsWith(prefix + '/')) {
           input = `${prefix}${input}`;
         }
       } else if (input && typeof input === 'object' && typeof input.url === 'string') {
-        if (input.url.startsWith('/')) {
+        if (input.url.startsWith('/') && !input.url.startsWith(prefix + '/')) {
           input.url = `${prefix}${input.url}`;
         }
       }

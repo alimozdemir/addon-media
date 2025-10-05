@@ -21,13 +21,14 @@ export default defineNitroPlugin((nitroApp) => {
       html.bodyAppend = html.bodyAppend || [];
 
       const prefix = normalized;
+      const escapedNoLeadingSlash = prefix.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
       const addPrefixToRootUrls = (chunk: string) =>
         chunk
-          // attributes like src="/..." or href='/...'
-          .replace(/(=\s*["'])(\/)(?!\/)/g, `$1${prefix}/`)
-          // CSS url(/...)
-          .replace(/(url\()\/(?!\/)/g, `$1${prefix}/`);
+          // attributes like src="/..." or href='/...' but NOT if already starts with the prefix
+          .replace(new RegExp(`(=\\s*["'])\\/(?!\\/|${escapedNoLeadingSlash})`, 'g'), `$1${prefix}/`)
+          // CSS url(/...) but NOT if already starts with the prefix
+          .replace(new RegExp(`(url\\()\\/(?!\\/|${escapedNoLeadingSlash})`, 'g'), `$1${prefix}/`);
 
       html.head = html.head.map((s: string) => addPrefixToRootUrls(s));
       html.body = html.body.map((s: string) => addPrefixToRootUrls(s));
@@ -38,29 +39,6 @@ export default defineNitroPlugin((nitroApp) => {
       html.bodyPrepend.push(`<script>window.__INGRESS_PATH__=${serialized};</script>`);
     } catch {
       // noop – never break rendering due to this helper
-    }
-  });
-
-  // Final safeguard: rewrite any remaining absolute-root URLs in the final HTML string
-  nitroApp.hooks.hook('render:response', (response, { event }) => {
-    try {
-      const rawHeader = (event.node.req.headers['x-ingress-path'] || event.node.req.headers['X-Ingress-Path']) as string | string[] | undefined;
-      const headerValue = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
-      if (!headerValue) return;
-
-      let normalized = headerValue.trim();
-      if (!normalized) return;
-      if (!normalized.startsWith('/')) normalized = `/${normalized}`;
-      normalized = normalized.replace(/\/+$/, '');
-      if (normalized === '/') return;
-
-      const prefix = normalized;
-      if (typeof response.body !== 'string') return;
-      response.body = response.body
-        .replace(/(=\s*["'])(\/)(?!\/)/g, `$1${prefix}/`)
-        .replace(/(url\()\/(?!\/)/g, `$1${prefix}/`);
-    } catch {
-      // noop
     }
   });
 });
