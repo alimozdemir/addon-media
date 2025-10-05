@@ -15,17 +15,13 @@ export default defineNitroPlugin((nitroApp) => {
       const serialized = JSON.stringify(normalized);
 
       // Ensure arrays are present
-      // @ts-expect-error - html shape is provided by Nitro at runtime
       html.head = html.head || [];
-      // @ts-expect-error - html shape is provided by Nitro at runtime
       html.bodyPrepend = html.bodyPrepend || [];
 
       // Put <base> as early as possible so relative URLs resolve under the ingress prefix
-      // @ts-expect-error - html shape is provided by Nitro at runtime
-      html.head.unshift(`<base href="${normalized}/">`);
+      html.head.unshift(`<base href="${normalized}/" target="_self" />`);
 
       // Expose the prefix to the client so fetch calls can be adjusted
-      // @ts-expect-error - html shape is provided by Nitro at runtime
       html.bodyPrepend.push(`<script>window.__INGRESS_PATH__=${serialized};</script>`);
     } catch {
       // noop – never break rendering due to this helper
