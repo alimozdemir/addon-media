@@ -28,4 +28,4 @@ ENV HOST=0.0.0.0
 EXPOSE 80
 
 # Start the Nuxt server
-CMD ["NUXT_APP_BASE_URL=./", "node", "/app/server/index.mjs"]
+CMD ["node", "/app/server/index.mjs"]
