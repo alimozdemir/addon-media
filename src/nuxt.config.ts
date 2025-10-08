@@ -8,6 +8,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   css: ['~/assets/global.css'],
+  runtimeConfig: {
+    public: {
+      playlistUrl: process.env.PLAYLIST_URL || '',
+    }
+  },
   vite: {
     plugins: [tailwindcss(),
 
