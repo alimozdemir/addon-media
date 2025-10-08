@@ -5,8 +5,10 @@ export default defineEventHandler(async (event) => {
     const path = "/data/options.json";
 
     if (!existsSync(path)) {
+
+        const config = useRuntimeConfig();
         return {
-            error: "Options file not found",
+            playlist_url: config.public.playlistUrl,
         };
     }
 

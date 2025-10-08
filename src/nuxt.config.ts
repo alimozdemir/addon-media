@@ -10,7 +10,7 @@ export default defineNuxtConfig({
   css: ['~/assets/global.css'],
   runtimeConfig: {
     public: {
-      playlistUrl: process.env.PLAYLIST_URL || '',
+      playlistUrl: '',
     }
   },
   vite: {

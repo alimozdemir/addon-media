@@ -1,16 +1,11 @@
 <script setup lang="ts">
 const route = useRoute();
-
-const { data, status, error } = useFetch('/api/config', {
-    method: 'GET'
-});
-
 </script>
 <template>
     <header class="sticky top-0 z-10 bg-card border-b border-border">
         <div class="mx-auto max-w-screen-2xl px-4">
             <div class="h-12 flex items-center gap-2">
-                <div class="font-semibold">Addon Media {{ data }}</div>
+                <div class="font-semibold">Addon Media</div>
                 <nav class="ml-auto flex items-center gap-1">
                     <NuxtLink
                         to="/browse"
