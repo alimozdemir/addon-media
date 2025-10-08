@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 export default defineEventHandler(async (event) => {
 
-    const path = "data/options.json";
+    const path = "/data/options.json";
 
     if (!existsSync(path)) {
         return {

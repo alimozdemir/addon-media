@@ -5,8 +5,6 @@ const { data, status, error } = useFetch('/api/config', {
     method: 'GET'
 });
 
-console.log(data.value);
-
 </script>
 <template>
     <header class="sticky top-0 z-10 bg-card border-b border-border">
