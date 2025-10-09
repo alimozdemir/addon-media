@@ -14,9 +14,7 @@ export default defineEventHandler(async (event) => {
 
     const content = await $fetch<string>(playlistUrl);
 
-
     setResponseHeader(event, "cache-control", "public, max-age=360");
-    console.log(content);
     // Optional: set content type to common playlist MIME type
     //event.node.res.setHeader("Content-Type", "application/x-mpegURL; charset=utf-8");
 

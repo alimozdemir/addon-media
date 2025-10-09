@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import { parse } from 'iptv-playlist-parser'
 
 export type PlaylistEntry = {
@@ -29,11 +30,14 @@ export function usePlaylist() {
   const liveStreams = ref<PlaylistEntry[]>([])
   const movies = ref<PlaylistEntry[]>([])
   const loading = ref(false)
-  const error = ref<Error | null>(null)
+  const error = ref<Error>()
+  const elapsedMs = ref<number>()
+  const lastRefreshedAt = ref<string>()
 
   async function refresh() {
+    const start = Date.now()
     loading.value = true
-    error.value = null
+    error.value = undefined;
     liveStreams.value = []
     movies.value = []
     try {
@@ -51,9 +55,11 @@ export function usePlaylist() {
           liveStreams.value.push(entry)
         }
       }
+      lastRefreshedAt.value = new Date().toISOString()
     } catch (e: any) {
       error.value = e instanceof Error ? e : new Error(String(e))
     } finally {
+      elapsedMs.value = Date.now() - start
       loading.value = false
     }
   }
@@ -63,6 +69,8 @@ export function usePlaylist() {
     movies,
     loading,
     error,
+    elapsedMs,
+    lastRefreshedAt,
     refresh,
   }
 }

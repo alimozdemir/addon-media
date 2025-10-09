@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const route = useRoute();
+import RefreshMenu from './RefreshMenu.vue'
 </script>
 <template>
     <header class="sticky top-0 z-10 bg-card border-b border-border">
@@ -32,6 +33,7 @@ const route = useRoute();
                         <span class="text-sm">Settings</span>
                     </NuxtLink>
                 </nav>
+                <RefreshMenu />
             </div>
         </div>
     </header>

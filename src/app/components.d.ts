@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ICaretRight: typeof import('~icons/ph/caret-right')['default']
     ICompass: typeof import('~icons/ph/compass')['default']
+    IDotsThreeVertical: typeof import('~icons/ph/dots-three-vertical')['default']
     IFile: typeof import('~icons/ph/file')['default']
     IFolder: typeof import('~icons/ph/folder')['default']
     IFolders: typeof import('~icons/ph/folders')['default']
