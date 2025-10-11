@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TopBar from './TopBar.vue'
+import GroupFilter from './GroupFilter.vue'
 import Results from './Results.vue'
 import { useSearch } from '~/composables/useSearch'
 import { usePlaylist, type PlaylistEntry } from '~/composables/usePlaylist'
@@ -11,6 +12,8 @@ const query = ref('')
 const loading = ref(false)
 const rawResults = ref<PlaylistEntry[]>([])
 const filter = ref<'all' | 'film' | 'tv-series'>('all')
+const groups = ref<string[]>([])
+const groupOptions = ref<string[]>([])
 
 const results = ref<PlaylistEntry[]>([])
 
@@ -27,9 +30,9 @@ async function performSearch() {
     loading.value = true
     try {
         if (!trimmed) {
-            results.value = await search.getAllPaged(offset.value, pageSize, filter.value)
+            results.value = await search.getAllPaged(offset.value, pageSize, filter.value, groups.value)
         } else {
-            results.value = await search.searchByTitlePaged(trimmed, offset.value, pageSize, filter.value)
+            results.value = await search.searchByTitlePaged(trimmed, offset.value, pageSize, filter.value, groups.value)
         }
         if (results.value.length < pageSize) noMore.value = true
     } finally {
@@ -45,8 +48,9 @@ onMounted(async () => {
         // optionally seed index again if empty
         await search.upsertAll([...playlist.movies.value, ...playlist.liveStreams.value])
     }
-    results.value = await search.getAllPaged(0, pageSize, filter.value)
+    results.value = await search.getAllPaged(0, pageSize, filter.value, groups.value)
     if (results.value.length < pageSize) noMore.value = true
+    groupOptions.value = await search.getGroups(filter.value)
 })
 
 watch(filter, async (val) => {
@@ -55,11 +59,24 @@ watch(filter, async (val) => {
     loading.value = true
     try {
         const q = query.value.trim()
-        if (!q) {
-            results.value = await search.getAllPaged(0, pageSize, val)
-        } else {
-            results.value = await search.searchByTitlePaged(q, 0, pageSize, val)
-        }
+        if (!q) results.value = await search.getAllPaged(0, pageSize, val, groups.value)
+        else results.value = await search.searchByTitlePaged(q, 0, pageSize, val, groups.value)
+        if (results.value.length < pageSize) noMore.value = true
+        groupOptions.value = await search.getGroups(val)
+        groups.value = []
+    } finally {
+        loading.value = false
+    }
+})
+
+watch(groups, async (val) => {
+    offset.value = 0
+    noMore.value = false
+    loading.value = true
+    try {
+        const q = query.value.trim()
+        if (!q) results.value = await search.getAllPaged(0, pageSize, filter.value, val)
+        else results.value = await search.searchByTitlePaged(q, 0, pageSize, filter.value, val)
         if (results.value.length < pageSize) noMore.value = true
     } finally {
         loading.value = false
@@ -79,11 +96,8 @@ const { stop: stopObserver } = useIntersectionObserver(
         ;(async () => {
             try {
                 let batch: PlaylistEntry[] = []
-                if (!currentQuery) {
-                    batch = await search.getAllPaged(nextOffset, pageSize, filter.value)
-                } else {
-                    batch = await search.searchByTitlePaged(currentQuery, nextOffset, pageSize, filter.value)
-                }
+                if (!currentQuery) batch = await search.getAllPaged(nextOffset, pageSize, filter.value, groups.value)
+                else batch = await search.searchByTitlePaged(currentQuery, nextOffset, pageSize, filter.value, groups.value)
                 if (batch.length > 0) {
                     offset.value = nextOffset
                     results.value = results.value.concat(batch)
@@ -101,6 +115,9 @@ const { stop: stopObserver } = useIntersectionObserver(
 <template>
     <section>
         <TopBar v-model:query="query" v-model:filter="filter" @submit="performSearch" />
+        <div class="mt-2">
+            <GroupFilter v-model="groups" :options="groupOptions" />
+        </div>
 
         <Results :items="pagedResults" :loading="loading" />
         <div ref="sentinel" class="h-6"></div>

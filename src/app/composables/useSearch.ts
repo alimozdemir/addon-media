@@ -188,7 +188,7 @@ export function useSearch() {
     }
   }
 
-  function callWorker<T>(type: 'searchTitle' | 'getAll' | 'searchGroup' | 'searchTitlePaged' | 'getAllPaged', payload?: any): Promise<T> {
+  function callWorker<T>(type: 'searchTitle' | 'getAll' | 'searchGroup' | 'searchTitlePaged' | 'getAllPaged' | 'getGroups', payload?: any): Promise<T> {
     return new Promise((resolve, reject) => {
       const w = ensureWorker()
       if (!w) return reject(new Error('Worker not available'))
@@ -205,27 +205,39 @@ export function useSearch() {
     })
   }
 
-  async function getAllPaged(offset: number, limit: number, filter: 'all' | 'film' | 'tv-series'): Promise<PlaylistEntry[]> {
+  async function getAllPaged(offset: number, limit: number, filter: 'all' | 'film' | 'tv-series', groups: string[] = []): Promise<PlaylistEntry[]> {
     try {
-      return await callWorker<PlaylistEntry[]>('getAllPaged', { offset, limit, filter })
+      return await callWorker<PlaylistEntry[]>('getAllPaged', { offset, limit, filter, groups })
     } catch {
       // fallback: main-thread scan with filter
       const all = await getAll()
-      const items = filter === 'all' ? all : all.filter(i => i.movieType === filter)
+      const byType = filter === 'all' ? all : all.filter(i => i.movieType === filter)
+      const items = (groups && groups.length > 0) ? byType.filter(i => groups.includes(i.groupTitle)) : byType
       return items.slice(offset, offset + limit)
     }
   }
 
-  async function searchByTitlePaged(query: string, offset: number, limit: number, filter: 'all' | 'film' | 'tv-series'): Promise<PlaylistEntry[]> {
+  async function searchByTitlePaged(query: string, offset: number, limit: number, filter: 'all' | 'film' | 'tv-series', groups: string[] = []): Promise<PlaylistEntry[]> {
     const q = (query || '').trim().toLowerCase()
-    if (!q) return await getAllPaged(offset, limit, filter)
+    if (!q) return await getAllPaged(offset, limit, filter, groups)
     try {
-      return await callWorker<PlaylistEntry[]>('searchTitlePaged', { query: q, offset, limit, filter })
+      return await callWorker<PlaylistEntry[]>('searchTitlePaged', { query: q, offset, limit, filter, groups })
     } catch {
       // fallback
       const res = await searchByTitle(q, Number.MAX_SAFE_INTEGER)
-      const items = filter === 'all' ? res : res.filter(i => i.movieType === filter)
+      const byType = filter === 'all' ? res : res.filter(i => i.movieType === filter)
+      const items = (groups && groups.length > 0) ? byType.filter(i => groups.includes(i.groupTitle)) : byType
       return items.slice(offset, offset + limit)
+    }
+  }
+
+  async function getGroups(filter: 'all' | 'film' | 'tv-series'): Promise<string[]> {
+    try {
+      return await callWorker<string[]>('getGroups', { filter })
+    } catch {
+      const all = await getAll()
+      const byType = filter === 'all' ? all : all.filter(i => i.movieType === filter)
+      return Array.from(new Set(byType.map(i => i.groupTitle))).sort((a, b) => a.localeCompare(b))
     }
   }
 
@@ -306,6 +318,7 @@ export function useSearch() {
     getAll,
     getAllPaged,
     searchByTitlePaged,
+    getGroups,
     getAllGroups,
   }
 }
