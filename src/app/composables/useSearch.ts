@@ -40,11 +40,22 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 async function idbBulkUpsert(db: IDBDatabase, entries: PlaylistEntry[]): Promise<void> {
+  function toPlainSerializable<T>(value: T): T {
+    try {
+      return JSON.parse(JSON.stringify(value)) as T
+    } catch {
+      return value
+    }
+  }
+
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
     for (const entry of entries) {
-      const toStore: any = { ...entry, titleLower: (entry.title || '').toLowerCase() }
+      if (!entry || typeof entry !== 'object') continue
+      const plain = toPlainSerializable(entry) as any
+      const toStore: any = { ...plain, titleLower: (plain.title || '').toLowerCase() }
+      if (Array.isArray(toStore)) continue
       store.put(toStore)
     }
     tx.oncomplete = () => resolve()

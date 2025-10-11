@@ -7,7 +7,8 @@ export type PlaylistEntry = {
   url: string
   groupTitle: string
   logo: string
-  movieType?: 'film' | 'tv series'
+  movieType?: 'film' | 'tv-series'
+  seasons?: { number: string; episodes: PlaylistEntry[] }[]
 }
 
 const MOVIE_EXTENSIONS = new Set([
@@ -28,11 +29,89 @@ function mapItemToEntry(item: any): PlaylistEntry {
   return { title, url, groupTitle, logo }
 }
 
-function inferMovieTypeFromGroup(groupTitle: string): 'film' | 'tv series' | undefined {
+function inferMovieTypeFromGroup(groupTitle: string): 'film' | 'tv-series' | undefined {
   const upper = (groupTitle || '').toUpperCase()
   if (upper.includes('FILM')) return 'film'
-  if (upper.includes('DIZI')) return 'tv series'
+  if (upper.includes('DIZI')) return 'tv-series'
   return undefined
+}
+
+function pad2(n: string | number): string {
+  const s = String(n)
+  return s.length === 1 ? `0${s}` : s
+}
+
+function parseEpisodeInfo(title: string): { seriesTitle: string; season: string; episode: string } | null {
+  const t = title.trim()
+  const patterns: RegExp[] = [
+    /(.*?)[\s_.-]*S(\d{1,2})[\s_.-]*E(\d{1,3})/i,           // Title S01E02 or S01-E02
+    /(.*?)[\s_.-]*(\d{1,2})x(\d{1,3})/i,                    // Title 1x02
+    /(.*?)[\s_.-]*Season\s*(\d{1,2})[\s_.-]*Episode\s*(\d{1,3})/i, // Season 1 Episode 2
+    /(.*?)[\s_.-]*S(\d{1,2})[\s_.-]*Ep?(\d{1,3})/i,        // S01E02 variants
+  ]
+  for (const rx of patterns) {
+    const m = t.match(rx)
+    if (m) {
+      const rawTitle = (m[1] || '').replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim()
+      const season = pad2(m[2]!)
+      const episode = pad2(m[3]!)
+      const seriesTitle = rawTitle
+      if (seriesTitle) return { seriesTitle, season, episode }
+    }
+  }
+  return null
+}
+
+// Group only DIZI tv-series entries into aggregated series with seasons/episodes.
+function groupAndClassifyEntries(entries: PlaylistEntry[]): { movies: PlaylistEntry[]; streams: PlaylistEntry[] } {
+  type SeriesAccum = { title: string; groupTitle: string; logo: string; seasons: Map<string, PlaylistEntry[]> }
+  const seriesMap = new Map<string, SeriesAccum>()
+  const movies: PlaylistEntry[] = []
+  const streams: PlaylistEntry[] = []
+
+  for (const base of entries) {
+    const ext = getUrlExtension(base.url)
+    if (ext && MOVIE_EXTENSIONS.has(ext)) {
+      const movieType = inferMovieTypeFromGroup(base.groupTitle) || 'film'
+      if (movieType === 'tv-series') {
+        const epi = parseEpisodeInfo(base.title)
+        if (epi) {
+          const key = epi.seriesTitle.toLowerCase()
+          let acc = seriesMap.get(key)
+          if (!acc) {
+            acc = { title: epi.seriesTitle, groupTitle: base.groupTitle, logo: base.logo, seasons: new Map() }
+            seriesMap.set(key, acc)
+          } else {
+            if (base.logo) acc.logo = base.logo
+            if (base.groupTitle) acc.groupTitle = base.groupTitle
+          }
+          const seasonKey = epi.season
+          if (!acc.seasons.has(seasonKey)) acc.seasons.set(seasonKey, [])
+          acc.seasons.get(seasonKey)!.push({ ...base, movieType })
+          continue
+        }
+      }
+      movies.push({ ...base, movieType })
+    } else {
+      streams.push(base)
+    }
+  }
+
+  for (const acc of seriesMap.values()) {
+    const seasons = Array.from(acc.seasons.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([number, episodes]) => ({ number, episodes }))
+    movies.push({
+      title: acc.title,
+      url: '',
+      logo: acc.logo,
+      groupTitle: acc.groupTitle,
+      movieType: 'tv-series',
+      seasons,
+    })
+  }
+
+  return { movies, streams }
 }
 
 type PlaylistState = {
@@ -73,17 +152,10 @@ export function usePlaylist() {
       const m3uContent = await res.text()
 
       const parsed = parse(m3uContent)
-
-      for (const item of parsed.items || []) {
-        const base = mapItemToEntry(item)
-        const ext = getUrlExtension(base.url)
-        if (ext && MOVIE_EXTENSIONS.has(ext)) {
-          const movieType = inferMovieTypeFromGroup(base.groupTitle)
-          state.value.movies.push({ ...base, movieType })
-        } else {
-          state.value.liveStreams.push(base)
-        }
-      }
+      const baseEntries = (parsed.items || []).map(mapItemToEntry)
+      const grouped = groupAndClassifyEntries(baseEntries)
+      state.value.movies = grouped.movies
+      state.value.liveStreams = grouped.streams
       // Upsert all entries into search index (IndexedDB) on client
       const search = useSearch()
       await search.upsertAll([...state.value.movies, ...state.value.liveStreams])
