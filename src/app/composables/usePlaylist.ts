@@ -6,6 +6,7 @@ export type PlaylistEntry = {
   title: string
   url: string
   groupTitle: string
+  groupTitleRaw?: string
   logo: string
   movieType?: 'film' | 'tv-series'
   seasons?: { number: string; episodes: PlaylistEntry[] }[]
@@ -21,12 +22,24 @@ function getUrlExtension(inputUrl: string): string | null {
   return match && match[1] ? match[1].toLowerCase() : null
 }
 
+function refineGroupTitle(raw: string): string {
+  let s = (raw || '')
+  const colon = s.indexOf(':')
+  if (colon !== -1) s = s.slice(colon + 1)
+  // Trim trailing numbers (e.g., "Drama 2" -> "Drama")
+  s = s.replace(/\s*\d+\s*$/i, '')
+  // Normalize spaces
+  s = s.replace(/\s+/g, ' ').trim()
+  return s
+}
+
 function mapItemToEntry(item: any): PlaylistEntry {
   const title = (item?.tvg?.name || item?.name || '').toString()
-  const groupTitle = (item?.group?.title || '').toString()
+  const groupTitleRaw = (item?.group?.title || '').toString()
+  const groupTitle = refineGroupTitle(groupTitleRaw)
   const logo = (item?.tvg?.logo || '').toString()
   const url = (item?.url || '').toString()
-  return { title, url, groupTitle, logo }
+  return { title, url, groupTitle, groupTitleRaw, logo }
 }
 
 function inferMovieTypeFromGroup(groupTitle: string): 'film' | 'tv-series' | undefined {
@@ -64,7 +77,7 @@ function parseEpisodeInfo(title: string): { seriesTitle: string; season: string;
 
 // Group only DIZI tv-series entries into aggregated series with seasons/episodes.
 function groupAndClassifyEntries(entries: PlaylistEntry[]): { movies: PlaylistEntry[]; streams: PlaylistEntry[] } {
-  type SeriesAccum = { title: string; groupTitle: string; logo: string; seasons: Map<string, PlaylistEntry[]> }
+  type SeriesAccum = { title: string; groupTitleRaw: string; groupTitle: string; logo: string; seasons: Map<string, PlaylistEntry[]> }
   const seriesMap = new Map<string, SeriesAccum>()
   const movies: PlaylistEntry[] = []
   const streams: PlaylistEntry[] = []
@@ -72,17 +85,18 @@ function groupAndClassifyEntries(entries: PlaylistEntry[]): { movies: PlaylistEn
   for (const base of entries) {
     const ext = getUrlExtension(base.url)
     if (ext && MOVIE_EXTENSIONS.has(ext)) {
-      const movieType = inferMovieTypeFromGroup(base.groupTitle) || 'film'
+      const movieType = inferMovieTypeFromGroup(base.groupTitleRaw || '') || 'film'
       if (movieType === 'tv-series') {
         const epi = parseEpisodeInfo(base.title)
         if (epi) {
           const key = epi.seriesTitle.toLowerCase()
           let acc = seriesMap.get(key)
           if (!acc) {
-            acc = { title: epi.seriesTitle, groupTitle: base.groupTitle, logo: base.logo, seasons: new Map() }
+            acc = { title: epi.seriesTitle, groupTitleRaw: base.groupTitleRaw || '', groupTitle: base.groupTitle, logo: base.logo, seasons: new Map() }
             seriesMap.set(key, acc)
           } else {
             if (base.logo) acc.logo = base.logo
+            if (base.groupTitleRaw) acc.groupTitleRaw = base.groupTitleRaw
             if (base.groupTitle) acc.groupTitle = base.groupTitle
           }
           const seasonKey = epi.season
@@ -106,6 +120,7 @@ function groupAndClassifyEntries(entries: PlaylistEntry[]): { movies: PlaylistEn
       url: '',
       logo: acc.logo,
       groupTitle: acc.groupTitle,
+      groupTitleRaw: acc.groupTitleRaw,
       movieType: 'tv-series',
       seasons,
     })
