@@ -156,7 +156,9 @@ async function pagedGetAll(db: IDBDatabase, offset: number, limit: number, filte
     let skipped = 0
     const tx = db.transaction(STORE_NAME, 'readonly')
     const store = tx.objectStore(STORE_NAME)
-    const req = store.openCursor()
+    // Use deterministic ordering by title_lower index
+    const index = store.index('title_lower')
+    const req = index.openCursor()
     req.onsuccess = () => {
       const cursor = req.result
       if (!cursor) return resolve(out)

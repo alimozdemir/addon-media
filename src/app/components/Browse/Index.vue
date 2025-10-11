@@ -45,12 +45,30 @@ onMounted(async () => {
     if (!playlist.lastRefreshedAt.value) {
         await playlist.refresh()
     } else {
-        // optionally seed index again if empty
-        await search.upsertAll([...playlist.movies.value, ...playlist.liveStreams.value])
+        // seed only movies
+        await search.upsertAll([...playlist.movies.value])
     }
     results.value = await search.getAllPaged(0, pageSize, filter.value, groups.value)
     if (results.value.length < pageSize) noMore.value = true
     groupOptions.value = await search.getGroups(filter.value)
+})
+
+watch(() => playlist.lastRefreshedAt.value, async () => {
+    offset.value = 0
+    noMore.value = false
+    loading.value = true
+    try {
+        // refresh results and groups after playlist sync completes
+        const q = query.value.trim()
+        if (!q) results.value = await search.getAllPaged(0, pageSize, filter.value, groups.value)
+        else results.value = await search.searchByTitlePaged(q, 0, pageSize, filter.value, groups.value)
+        if (results.value.length < pageSize) noMore.value = true
+        groupOptions.value = await search.getGroups(filter.value)
+        // drop any selected groups that no longer exist
+        if (groups.value.length > 0) groups.value = groups.value.filter(g => groupOptions.value.includes(g))
+    } finally {
+        loading.value = false
+    }
 })
 
 watch(filter, async (val) => {
@@ -81,7 +99,7 @@ watch(groups, async (val) => {
     } finally {
         loading.value = false
     }
-})
+}, { deep: true })
 
 const sentinel = ref<HTMLElement | null>(null)
 const { stop: stopObserver } = useIntersectionObserver(
@@ -92,14 +110,14 @@ const { stop: stopObserver } = useIntersectionObserver(
         if (loading.value || loadingMore.value || noMore.value) return
         loadingMore.value = true
         const currentQuery = query.value.trim()
-        const nextOffset = offset.value + pageSize
+        const nextOffset = results.value.length
         ;(async () => {
             try {
                 let batch: PlaylistEntry[] = []
                 if (!currentQuery) batch = await search.getAllPaged(nextOffset, pageSize, filter.value, groups.value)
                 else batch = await search.searchByTitlePaged(currentQuery, nextOffset, pageSize, filter.value, groups.value)
                 if (batch.length > 0) {
-                    offset.value = nextOffset
+                    offset.value = results.value.length + batch.length
                     results.value = results.value.concat(batch)
                 } else {
                     noMore.value = true
@@ -111,6 +129,7 @@ const { stop: stopObserver } = useIntersectionObserver(
     },
     { threshold: 1, rootMargin: '0px' }
 )
+
 </script>
 <template>
     <section>

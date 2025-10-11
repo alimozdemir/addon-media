@@ -171,9 +171,9 @@ export function usePlaylist() {
       const grouped = groupAndClassifyEntries(baseEntries)
       state.value.movies = grouped.movies
       state.value.liveStreams = grouped.streams
-      // Upsert all entries into search index (IndexedDB) on client
+      // Upsert only movie entries into search index (IndexedDB)
       const search = useSearch()
-      await search.upsertAll([...state.value.movies, ...state.value.liveStreams])
+      await search.upsertAll([...state.value.movies])
       state.value.lastRefreshedAt = new Date().toISOString()
     } catch (e: any) {
       state.value.error = e instanceof Error ? e : new Error(String(e))

@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import Browse from '~/components/Browse/Index.vue'
-const playlist = usePlaylist();
-
-onMounted(() => {
-    playlist.refresh();
-});
+// Refresh is handled inside the Browse component when needed
 
 </script>
 
