@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { parse } from 'iptv-playlist-parser'
 
 export type PlaylistEntry = {
@@ -26,23 +26,42 @@ function mapItemToEntry(item: any): PlaylistEntry {
   return { title, url, groupTitle, logo }
 }
 
+type PlaylistState = {
+  liveStreams: PlaylistEntry[]
+  movies: PlaylistEntry[]
+  loading: boolean
+  error?: Error
+  elapsedMs?: number
+  lastRefreshedAt?: string
+}
+
 export function usePlaylist() {
-  const liveStreams = ref<PlaylistEntry[]>([])
-  const movies = ref<PlaylistEntry[]>([])
-  const loading = ref(false)
-  const error = ref<Error>()
-  const elapsedMs = ref<number>()
-  const lastRefreshedAt = ref<string>()
+  const state = useState<PlaylistState>('playlist-state', () => ({
+    liveStreams: [],
+    movies: [],
+    loading: false,
+    error: undefined,
+    elapsedMs: undefined,
+    lastRefreshedAt: undefined,
+  }))
+
+  const liveStreams = computed(() => state.value.liveStreams)
+  const movies = computed(() => state.value.movies)
+  const loading = computed(() => state.value.loading)
+  const error = computed(() => state.value.error)
+  const elapsedMs = computed(() => state.value.elapsedMs)
+  const lastRefreshedAt = computed(() => state.value.lastRefreshedAt)
 
   async function refresh() {
+    if (state.value.loading) return
     const start = Date.now()
-    loading.value = true
-    error.value = undefined;
-    liveStreams.value = []
-    movies.value = []
+    state.value.loading = true
+    state.value.error = undefined
+    state.value.liveStreams = []
+    state.value.movies = []
     try {
       const res = await $fetch.raw('/api/playlist/download', { responseType: 'stream' })
-      const m3uContent = await res.text();
+      const m3uContent = await res.text()
 
       const parsed = parse(m3uContent)
 
@@ -50,17 +69,17 @@ export function usePlaylist() {
         const entry = mapItemToEntry(item)
         const ext = getUrlExtension(entry.url)
         if (ext && MOVIE_EXTENSIONS.has(ext)) {
-          movies.value.push(entry)
+          state.value.movies.push(entry)
         } else {
-          liveStreams.value.push(entry)
+          state.value.liveStreams.push(entry)
         }
       }
-      lastRefreshedAt.value = new Date().toISOString()
+      state.value.lastRefreshedAt = new Date().toISOString()
     } catch (e: any) {
-      error.value = e instanceof Error ? e : new Error(String(e))
+      state.value.error = e instanceof Error ? e : new Error(String(e))
     } finally {
-      elapsedMs.value = Date.now() - start
-      loading.value = false
+      state.value.elapsedMs = Date.now() - start
+      state.value.loading = false
     }
   }
 

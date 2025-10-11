@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { DropdownMenuRoot, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from 'reka-ui'
-import { usePlaylist } from '~/composable/usePlaylist'
 
 dayjs.extend(relativeTime)
 
@@ -41,7 +40,7 @@ async function handleRefresh() {
     <DropdownMenuContent
       align="end"
       :side-offset="6"
-      class="min-w-[240px] rounded-[--radius] border border-border bg-popover/95 supports-[backdrop-filter]:bg-popover/80 backdrop-blur shadow-md p-1"
+      class="min-w-[320px] rounded-[--radius] border border-border bg-popover/95 supports-[backdrop-filter]:bg-popover/80 backdrop-blur shadow-md p-1"
     >
       <DropdownMenuItem class="flex items-center justify-between px-2.5 py-1.5 rounded hover:bg-muted cursor-default pointer-events-none">
         <span class="text-xs uppercase tracking-wide text-muted-foreground">Last refresh</span>
