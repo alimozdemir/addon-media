@@ -8,18 +8,18 @@ defineProps<{ items: PlaylistEntry[]; loading?: boolean }>()
     <div class="mt-4">
         <div v-if="loading" class="text-sm text-muted-foreground">Searching...</div>
         <div v-else-if="!items?.length" class="text-sm text-muted-foreground">No results</div>
-        <ul v-else class="grid gap-2">
-            <li v-for="it in items" :key="it.title + it.url" class="p-3 rounded-[--radius] border border-border bg-card flex items-center gap-3">
-                <img v-if="it.logo" :src="it.logo" alt="" class="w-10 h-10 rounded object-cover bg-muted" />
-                <div class="min-w-0">
-                    <div class="text-sm font-medium truncate">{{ it.title }}</div>
-                    <div class="text-xs text-muted-foreground truncate">{{ it.groupTitle }}</div>
+        <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <article v-for="it in items" :key="it.title + it.url" class="rounded-[--radius] border border-border bg-card overflow-hidden">
+                <div class="aspect-video bg-muted/50">
+                    <img v-if="it.logo" :src="it.logo" alt="" class="w-full h-full object-cover" />
                 </div>
-                <div class="ml-auto text-xs text-muted-foreground">
-                    <span v-if="it.movieType">{{ it.movieType }}</span>
+                <div class="p-3 space-y-1">
+                    <div class="text-sm font-medium line-clamp-2">{{ it.title }}</div>
+                    <div class="text-xs text-muted-foreground">{{ it.groupTitle }}</div>
+                    <div class="text-xs text-muted-foreground" v-if="it.movieType">{{ it.movieType }}</div>
                 </div>
-            </li>
-        </ul>
+            </article>
+        </div>
     </div>
 </template>
 

@@ -172,6 +172,39 @@ export function useSearch() {
     lastSyncAt: undefined,
   }))
 
+  // Web worker plumbing for off-main-thread queries
+  const workerRef = useState<Worker | null>('search-worker', () => null)
+  const reqIdRef = useState<number>('search-worker-reqid', () => 0)
+
+  function ensureWorker(): Worker | null {
+    if (typeof window === 'undefined') return null
+    if (workerRef.value) return workerRef.value
+    try {
+      const w = new Worker(new URL('~/workers/search.worker.ts', import.meta.url), { type: 'module' })
+      workerRef.value = w
+      return w
+    } catch {
+      return null
+    }
+  }
+
+  function callWorker<T>(type: 'searchTitle' | 'getAll' | 'searchGroup', payload?: any): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const w = ensureWorker()
+      if (!w) return reject(new Error('Worker not available'))
+      const id = ++reqIdRef.value
+      const onMessage = (ev: MessageEvent<any>) => {
+        const data = ev.data
+        if (!data || data.id !== id) return
+        w.removeEventListener('message', onMessage)
+        if (data.ok) resolve(data.result as T)
+        else reject(new Error(String(data.error)))
+      }
+      w.addEventListener('message', onMessage)
+      w.postMessage({ id, type, payload })
+    })
+  }
+
   const ready = computed(() => state.value.ready)
   const lastSyncAt = computed(() => state.value.lastSyncAt)
 
@@ -195,11 +228,14 @@ export function useSearch() {
   async function searchByTitle(query: string, limit = 50): Promise<PlaylistEntry[]> {
     const q = (query || '').trim().toLowerCase()
     if (!q) return []
-
-    // Query IndexedDB only
-    const db = await ensureDb()
-    if (!db) return []
-    return await idbSearchByTitleContains(db, q, limit)
+    // Prefer worker
+    try {
+      return await callWorker<PlaylistEntry[]>('searchTitle', { query: q, limit })
+    } catch {
+      const db = await ensureDb()
+      if (!db) return []
+      return await idbSearchByTitleContains(db, q, limit)
+    }
   }
 
   async function getByTitle(title: string): Promise<PlaylistEntry | undefined> {
@@ -211,15 +247,23 @@ export function useSearch() {
   async function searchByGroupTitle(query: string, limit = 100): Promise<PlaylistEntry[]> {
     const q = (query || '').trim().toLowerCase()
     if (!q) return []
-    const db = await ensureDb()
-    if (!db) return []
-    return await idbSearchByGroupTitleContains(db, q, limit)
+    try {
+      return await callWorker<PlaylistEntry[]>('searchGroup', { query: q, limit })
+    } catch {
+      const db = await ensureDb()
+      if (!db) return []
+      return await idbSearchByGroupTitleContains(db, q, limit)
+    }
   }
 
   async function getAll(): Promise<PlaylistEntry[]> {
-    const db = await ensureDb()
-    if (!db) return []
-    return await idbGetAll(db)
+    try {
+      return await callWorker<PlaylistEntry[]>('getAll')
+    } catch {
+      const db = await ensureDb()
+      if (!db) return []
+      return await idbGetAll(db)
+    }
   }
 
   async function getAllGroups(): Promise<string[]> {
