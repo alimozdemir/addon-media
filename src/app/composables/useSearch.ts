@@ -188,7 +188,7 @@ export function useSearch() {
     }
   }
 
-  function callWorker<T>(type: 'searchTitle' | 'getAll' | 'searchGroup', payload?: any): Promise<T> {
+  function callWorker<T>(type: 'searchTitle' | 'getAll' | 'searchGroup' | 'searchTitlePaged' | 'getAllPaged', payload?: any): Promise<T> {
     return new Promise((resolve, reject) => {
       const w = ensureWorker()
       if (!w) return reject(new Error('Worker not available'))
@@ -203,6 +203,30 @@ export function useSearch() {
       w.addEventListener('message', onMessage)
       w.postMessage({ id, type, payload })
     })
+  }
+
+  async function getAllPaged(offset: number, limit: number, filter: 'all' | 'film' | 'tv-series'): Promise<PlaylistEntry[]> {
+    try {
+      return await callWorker<PlaylistEntry[]>('getAllPaged', { offset, limit, filter })
+    } catch {
+      // fallback: main-thread scan with filter
+      const all = await getAll()
+      const items = filter === 'all' ? all : all.filter(i => i.movieType === filter)
+      return items.slice(offset, offset + limit)
+    }
+  }
+
+  async function searchByTitlePaged(query: string, offset: number, limit: number, filter: 'all' | 'film' | 'tv-series'): Promise<PlaylistEntry[]> {
+    const q = (query || '').trim().toLowerCase()
+    if (!q) return await getAllPaged(offset, limit, filter)
+    try {
+      return await callWorker<PlaylistEntry[]>('searchTitlePaged', { query: q, offset, limit, filter })
+    } catch {
+      // fallback
+      const res = await searchByTitle(q, Number.MAX_SAFE_INTEGER)
+      const items = filter === 'all' ? res : res.filter(i => i.movieType === filter)
+      return items.slice(offset, offset + limit)
+    }
   }
 
   const ready = computed(() => state.value.ready)
@@ -280,6 +304,8 @@ export function useSearch() {
     searchByGroupTitle,
     getByTitle,
     getAll,
+    getAllPaged,
+    searchByTitlePaged,
     getAllGroups,
   }
 }

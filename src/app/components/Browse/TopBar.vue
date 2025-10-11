@@ -3,6 +3,11 @@ import SearchInput from './SearchInput.vue'
 
 const query = defineModel<string>('query', { default: '' })
 const filter = defineModel<'all' | 'film' | 'tv-series'>('filter', { default: 'all' })
+const emit = defineEmits<{ (e: 'submit', value: string): void }>()
+
+function handleSubmit(val: string) {
+    emit('submit', val)
+}
 </script>
 
 <template>
@@ -23,7 +28,7 @@ const filter = defineModel<'all' | 'film' | 'tv-series'>('filter', { default: 'a
                     @click="filter = 'tv-series'">TV Series</button>
             </div>
             <div class="ml-auto w-full max-w-md">
-                <SearchInput v-model="query" />
+                <SearchInput v-model="query" @submit="handleSubmit" />
             </div>
         </div>
     </div>

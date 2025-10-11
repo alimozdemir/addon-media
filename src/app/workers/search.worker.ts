@@ -105,7 +105,7 @@ async function idbSearchByGroupTitleContains(db: IDBDatabase, query: string, lim
   })
 }
 
-type Req = { id: number; type: 'searchTitle' | 'getAll' | 'searchGroup'; payload?: any }
+type Req = { id: number; type: 'searchTitle' | 'getAll' | 'searchGroup' | 'searchTitlePaged' | 'getAllPaged'; payload?: any }
 type Res = { id: number; ok: true; result: any } | { id: number; ok: false; error: string }
 
 self.onmessage = async (ev: MessageEvent<Req>) => {
@@ -119,6 +119,12 @@ self.onmessage = async (ev: MessageEvent<Req>) => {
       result = await idbGetAll(db)
     } else if (type === 'searchGroup') {
       result = await idbSearchByGroupTitleContains(db, payload?.query || '', payload?.limit || 100)
+    } else if (type === 'searchTitlePaged') {
+      const { query = '', offset = 0, limit = 20, filter = 'all' } = payload || {}
+      result = await pagedSearchByTitle(db, query, offset, limit, filter)
+    } else if (type === 'getAllPaged') {
+      const { offset = 0, limit = 20, filter = 'all' } = payload || {}
+      result = await pagedGetAll(db, offset, limit, filter)
     } else {
       throw new Error('Unknown request type')
     }
@@ -128,6 +134,66 @@ self.onmessage = async (ev: MessageEvent<Req>) => {
     const res: Res = { id, ok: false, error: e?.message || String(e) }
     ;(self as any).postMessage(res)
   }
+}
+
+function acceptsFilter(v: any, filter: 'all' | 'film' | 'tv-series') {
+  if (filter === 'all') return true
+  return (v?.movieType || '') === filter
+}
+
+async function pagedGetAll(db: IDBDatabase, offset: number, limit: number, filter: 'all' | 'film' | 'tv-series') {
+  return await new Promise<PlaylistEntry[]>((resolve, reject) => {
+    const out: PlaylistEntry[] = []
+    let skipped = 0
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    const req = store.openCursor()
+    req.onsuccess = () => {
+      const cursor = req.result
+      if (!cursor) return resolve(out)
+      const v = cursor.value as any
+      if (acceptsFilter(v, filter)) {
+        if (skipped < offset) {
+          skipped++
+        } else if (out.length < limit) {
+          out.push(v as PlaylistEntry)
+        } else {
+          return resolve(out)
+        }
+      }
+      cursor.continue()
+    }
+    req.onerror = () => reject(req.error)
+  })
+}
+
+async function pagedSearchByTitle(db: IDBDatabase, query: string, offset: number, limit: number, filter: 'all' | 'film' | 'tv-series') {
+  return await new Promise<PlaylistEntry[]>((resolve, reject) => {
+    const out: PlaylistEntry[] = []
+    let skipped = 0
+    const lower = (query || '').toLowerCase()
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    const index = store.index('title_lower')
+    const req = index.openCursor()
+    req.onsuccess = () => {
+      const cursor = req.result
+      if (!cursor) return resolve(out)
+      const v = cursor.value as any
+      const tl = (v?.titleLower || v?.title || '').toLowerCase()
+      if (tl.includes(lower) && acceptsFilter(v, filter)) {
+        if (skipped < offset) {
+          skipped++
+        } else if (out.length < limit) {
+          out.push(v as PlaylistEntry)
+        } else {
+          return resolve(out)
+        }
+      }
+      cursor.continue()
+    }
+    req.onerror = () => reject(req.error)
+  })
 }
 
 

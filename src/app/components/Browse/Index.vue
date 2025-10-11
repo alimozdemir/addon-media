@@ -12,26 +12,30 @@ const loading = ref(false)
 const rawResults = ref<PlaylistEntry[]>([])
 const filter = ref<'all' | 'film' | 'tv-series'>('all')
 
-const results = computed(() => {
-    if (!rawResults.value?.length) return []
-    if (filter.value === 'all') return rawResults.value
-    return rawResults.value.filter(it => it.movieType === filter.value)
-})
+const results = ref<PlaylistEntry[]>([])
 
-watchThrottled(query, async (q: string) => {
-    const trimmed = q.trim()
-    if (!trimmed) {
-        // when clearing query, fall back to all
-        rawResults.value = await search.getAll()
-        return
-    }
+const pageSize = 20
+const offset = ref(0)
+const pagedResults = computed(() => results.value)
+const loadingMore = ref(false)
+const noMore = ref(false)
+
+async function performSearch() {
+    const trimmed = query.value.trim()
+    offset.value = 0
+    noMore.value = false
     loading.value = true
     try {
-        rawResults.value = await search.searchByTitle(trimmed, 100)
+        if (!trimmed) {
+            results.value = await search.getAllPaged(offset.value, pageSize, filter.value)
+        } else {
+            results.value = await search.searchByTitlePaged(trimmed, offset.value, pageSize, filter.value)
+        }
+        if (results.value.length < pageSize) noMore.value = true
     } finally {
         loading.value = false
     }
-}, { throttle: 300, trailing: true })
+}
 
 onMounted(async () => {
     // Ensure we have data in the index at least once
@@ -41,13 +45,64 @@ onMounted(async () => {
         // optionally seed index again if empty
         await search.upsertAll([...playlist.movies.value, ...playlist.liveStreams.value])
     }
-    rawResults.value = await search.getAll()
+    results.value = await search.getAllPaged(0, pageSize, filter.value)
+    if (results.value.length < pageSize) noMore.value = true
 })
+
+watch(filter, async (val) => {
+    offset.value = 0
+    noMore.value = false
+    loading.value = true
+    try {
+        const q = query.value.trim()
+        if (!q) {
+            results.value = await search.getAllPaged(0, pageSize, val)
+        } else {
+            results.value = await search.searchByTitlePaged(q, 0, pageSize, val)
+        }
+        if (results.value.length < pageSize) noMore.value = true
+    } finally {
+        loading.value = false
+    }
+})
+
+const sentinel = ref<HTMLElement | null>(null)
+const { stop: stopObserver } = useIntersectionObserver(
+    sentinel,
+    (entries) => {
+        const [entry] = entries
+        if (!entry?.isIntersecting) return
+        if (loading.value || loadingMore.value || noMore.value) return
+        loadingMore.value = true
+        const currentQuery = query.value.trim()
+        const nextOffset = offset.value + pageSize
+        ;(async () => {
+            try {
+                let batch: PlaylistEntry[] = []
+                if (!currentQuery) {
+                    batch = await search.getAllPaged(nextOffset, pageSize, filter.value)
+                } else {
+                    batch = await search.searchByTitlePaged(currentQuery, nextOffset, pageSize, filter.value)
+                }
+                if (batch.length > 0) {
+                    offset.value = nextOffset
+                    results.value = results.value.concat(batch)
+                } else {
+                    noMore.value = true
+                }
+            } finally {
+                loadingMore.value = false
+            }
+        })()
+    },
+    { threshold: 1, rootMargin: '0px' }
+)
 </script>
 <template>
     <section>
-        <TopBar v-model:query="query" v-model:filter="filter" />
+        <TopBar v-model:query="query" v-model:filter="filter" @submit="performSearch" />
 
-        <Results :items="results" :loading="loading" />
+        <Results :items="pagedResults" :loading="loading" />
+        <div ref="sentinel" class="h-6"></div>
     </section>
 </template>
