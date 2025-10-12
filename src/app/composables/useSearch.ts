@@ -84,6 +84,17 @@ async function idbGetByTitle(db: IDBDatabase, title: string): Promise<PlaylistEn
   })
 }
 
+async function idbGetByTitleLower(db: IDBDatabase, titleLower: string): Promise<PlaylistEntry | undefined> {
+  return await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    const index = store.index('title_lower')
+    const req = index.get((titleLower || '').toLowerCase())
+    req.onsuccess = () => resolve(req.result as PlaylistEntry | undefined)
+    req.onerror = () => reject(req.error)
+  })
+}
+
 async function idbSearchByTitleContains(db: IDBDatabase, query: string, limit = 50): Promise<PlaylistEntry[]> {
   // Case-insensitive substring search by scanning title_lower index; stops at `limit` results
   return await new Promise((resolve, reject) => {
@@ -280,6 +291,12 @@ export function useSearch() {
     return await idbGetByTitle(db, title)
   }
 
+  async function getByTitleLower(titleLower: string): Promise<PlaylistEntry | undefined> {
+    const db = await ensureDb()
+    if (!db) return undefined
+    return await idbGetByTitleLower(db, (titleLower || '').toLowerCase())
+  }
+
   async function searchByGroupTitle(query: string, limit = 100): Promise<PlaylistEntry[]> {
     const q = (query || '').trim().toLowerCase()
     if (!q) return []
@@ -315,6 +332,7 @@ export function useSearch() {
     searchByTitle,
     searchByGroupTitle,
     getByTitle,
+    getByTitleLower,
     getAll,
     getAllPaged,
     searchByTitlePaged,
