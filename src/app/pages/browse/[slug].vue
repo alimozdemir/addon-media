@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useSearch } from '~/composables/useSearch'
-import Detail from '~/components/Detail/Index.vue'
+import Detail from '~/components/Browse/Detail/Index.vue'
 
 const route = useRoute()
 const search = useSearch()
