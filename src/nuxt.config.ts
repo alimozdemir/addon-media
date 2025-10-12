@@ -12,6 +12,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       playlistUrl: '',
+      env: 'production'
     }
   },
 

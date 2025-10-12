@@ -14,7 +14,6 @@ declare module 'vue' {
     IFile: typeof import('~icons/ph/file')['default']
     IFolder: typeof import('~icons/ph/folder')['default']
     IFolders: typeof import('~icons/ph/folders')['default']
-    IFunnel: typeof import('~icons/ph/funnel')['default']
     IGear: typeof import('~icons/ph/gear')['default']
     ILinkSimple: typeof import('~icons/ph/link-simple')['default']
     IMinus: typeof import('~icons/ph/minus')['default']
