@@ -30,6 +30,8 @@ const actionLabel = computed(() => {
     }
     return `Download ${count} episodes`
 })
+
+
 </script>
 
 <template>
@@ -37,7 +39,7 @@ const actionLabel = computed(() => {
     <div class="fixed inset-x-0 bottom-0 z-20 p-3 md:hidden">
         <div class="mx-auto max-w-screen-sm rounded-[--radius] border border-border bg-card shadow-lg">
             <div class="p-3 flex items-center gap-2">
-                <button type="button" class="ml-auto px-4 h-10 rounded bg-primary text-primary-foreground text-sm" @click="emit('download')">{{ actionLabel }}</button>
+                <button type="button" class="ml-auto px-4 h-10 rounded bg-primary text-primary-foreground text-sm active:scale-95 transition cursor-pointer" @click="emit('download')">{{ actionLabel }}</button>
             </div>
             <div v-if="isSeries" class="px-3 pb-3 text-xs text-muted-foreground flex items-center gap-2">
                 <button type="button" class="underline" v-if="selectedEpisodes.length > 0" @click="emit('clear')">Clear selections</button>
@@ -55,7 +57,7 @@ const actionLabel = computed(() => {
             </div>
             <div class="ml-auto flex items-center gap-2">
                 <button type="button" v-if="isSeries && selectedEpisodes.length > 0" class="px-3 h-9 rounded text-sm border border-border hover:bg-muted" @click="emit('clear')">Clear</button>
-                <button type="button" class="px-4 h-9 rounded bg-primary text-primary-foreground text-sm" @click="emit('download')">{{ actionLabel }}</button>
+                <button type="button" class="px-4 h-9 rounded bg-primary text-primary-foreground text-sm active:scale-95 transition cursor-pointer" @click="emit('download')">{{ actionLabel }}</button>
             </div>
         </div>
     </div>

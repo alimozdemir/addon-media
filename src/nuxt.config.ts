@@ -16,6 +16,11 @@ export default defineNuxtConfig({
     }
   },
 
+  nitro: {
+    experimental: {
+      tasks: true
+    }
+  },
   vite: {
     plugins: [tailwindcss(),
 

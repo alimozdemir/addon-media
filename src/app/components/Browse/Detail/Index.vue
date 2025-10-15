@@ -36,33 +36,58 @@ function clearSelections() {
     selectedKeys.value = []
 }
 
-function triggerDownload(url: string, filename?: string) {
+async function handleDownload() {
     try {
-        const a = document.createElement('a')
-        a.href = url
-        if (filename) a.download = filename
-        a.rel = 'noopener noreferrer'
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-    } catch {
-        window.open(url, '_blank')
-    }
-}
-
-function handleDownload() {
-    if (!isSeries.value) {
-        if (props.item?.url) triggerDownload(props.item.url)
-        return
-    }
-    if (selectedEpisodes.value.length > 0) {
-        for (const ep of selectedEpisodes.value) {
-            if (ep.url) triggerDownload(ep.url)
+        if (!isSeries.value) {
+            const payload: PlaylistEntry = {
+                title: props.item.title,
+                url: props.item.url,
+                groupTitle: props.item.groupTitle,
+                groupTitleRaw: props.item.groupTitleRaw,
+                logo: props.item.logo,
+                movieType: props.item.movieType || 'film',
+            }
+            const { jobId } = await $fetch<{ jobId: string }>('/api/files/download', { method: 'POST', body: payload })
+            if (jobId) {
+                const  interval = setInterval(async () => {
+                    const status = await $fetch<{ state: 'pending' | 'downloading' | 'completed' | 'failed'; progress?: number; error?: string }>(`/api/files/status/${jobId}`)
+                    if (status.state === 'completed') {
+                        clearInterval(interval)
+                    }
+                }, 1000)
+            }
+            return
         }
-        return
-    }
-    for (const ep of currentEpisodes.value) {
-        if (ep.url) triggerDownload(ep.url)
+
+        const season = selectedSeason.value
+        if (!season) return
+
+        const episodesToDownload = (selectedEpisodes.value.length > 0 ? selectedEpisodes.value : currentEpisodes.value)
+            .filter(ep => !!ep.url)
+            .map(ep => ({
+                title: ep.title,
+                url: ep.url,
+                groupTitle: ep.groupTitle,
+                groupTitleRaw: ep.groupTitleRaw,
+                logo: ep.logo,
+            })) as PlaylistEntry[]
+
+        if (episodesToDownload.length === 0) return
+
+        const payload = {
+            title: props.item.title,
+            groupTitle: props.item.groupTitle,
+            groupTitleRaw: props.item.groupTitleRaw,
+            logo: props.item.logo,
+            movieType: 'tv-series' as const,
+            seasons: [
+                { number: season, episodes: episodesToDownload },
+            ],
+        }
+        await $fetch('/api/files/download', { method: 'POST', body: payload })
+    } catch (e) {
+        // swallow for now; optionally surface a toast
+        console.error(e)
     }
 }
 </script>
