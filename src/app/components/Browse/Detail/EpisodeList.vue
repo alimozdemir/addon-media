@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PlaylistEntry } from '~/composables/usePlaylist'
 
-const props = defineProps<{ episodes: PlaylistEntry[] }>()
+const props = defineProps<{ episodes: PlaylistEntry[]; progressMap?: Record<string, { progress?: number; state: string }> }>()
 const selectedKeys = defineModel<string[]>('selectedKeys', { default: [] })
 
 function episodeKey(ep: PlaylistEntry): string {
@@ -34,7 +34,15 @@ function toggle(ep: PlaylistEntry) {
                     />
                     <span class="space-y-0.5">
                         <div class="text-sm font-medium leading-snug line-clamp-2">{{ ep.title }}</div>
-                        <div class="text-xs text-muted-foreground">{{ ep.groupTitle }}</div>
+                        <div class="text-xs text-muted-foreground">
+                            <template v-if="props.progressMap && props.progressMap[episodeKey(ep)]">
+                                <span class="capitalize">{{ props.progressMap[episodeKey(ep)]!.state }}</span>
+                                <span v-if="props.progressMap[episodeKey(ep)]!.state !== 'completed'"> • {{ Math.round(props.progressMap[episodeKey(ep)].progress || 0) }}%</span>
+                            </template>
+                            <template v-else>
+                                {{ ep.groupTitle }}
+                            </template>
+                        </div>
                     </span>
                 </label>
             </li>

@@ -7,6 +7,8 @@ const props = defineProps<{
     selectedEpisodes: PlaylistEntry[];
     selectedSeason: string | null;
     progress?: Progress | null;
+    seriesPercent?: number | null;
+    seriesState?: 'pending' | 'downloading' | 'completed' | 'failed' | null;
 }>()
 const emit = defineEmits<{ (e: 'download'): void; (e: 'clear'): void }>()
 
@@ -68,8 +70,14 @@ const actionLabel = computed(() => {
         <div class="rounded-[--radius] border border-border bg-card p-3 flex items-center gap-3">
             <div class="text-sm text-muted-foreground">
                 <template v-if="isSeries">
-                    <span v-if="selectedEpisodes.length === 0">Season {{ selectedSeason || '' }}</span>
-                    <span v-else>{{ selectedEpisodes.length }} episode(s) selected</span>
+                    <template v-if="props.seriesPercent != null">
+                        <span class="capitalize">{{ props.seriesState || 'downloading' }}</span>
+                        <span v-if="props.seriesState !== 'completed'"> • {{ props.seriesPercent }}%</span>
+                    </template>
+                    <template v-else>
+                        <span v-if="selectedEpisodes.length === 0">Season {{ selectedSeason || '' }}</span>
+                        <span v-else>{{ selectedEpisodes.length }} episode(s) selected</span>
+                    </template>
                 </template>
                 <template v-else-if="props.progress">
                     <span class="capitalize">{{ props.progress.state }}</span>
@@ -78,6 +86,9 @@ const actionLabel = computed(() => {
             </div>
             <div v-if="!isSeries && props.progress" class="w-40 h-2 bg-muted rounded overflow-hidden">
                 <div class="h-full bg-primary" :style="{ width: `${Math.max(0, Math.min(100, props.progress?.progress || 0))}%` }"></div>
+            </div>
+            <div v-else-if="isSeries && props.seriesPercent != null" class="w-40 h-2 bg-muted rounded overflow-hidden">
+                <div class="h-full bg-primary" :style="{ width: `${Math.max(0, Math.min(100, props.seriesPercent || 0))}%` }"></div>
             </div>
             <div class="ml-auto flex items-center gap-2">
                 <button type="button" v-if="isSeries && selectedEpisodes.length > 0" class="px-3 h-9 rounded text-sm border border-border hover:bg-muted" @click="emit('clear')">Clear</button>

@@ -38,6 +38,11 @@ const jobId = ref<string | null>(null)
 const progress = ref<Progress | null>(null)
 let statusInterval: ReturnType<typeof setInterval> | null = null
 
+// Download tracking for series (per-episode)
+const jobIdsByEpisode = ref<Record<string, string>>({})
+const episodeProgressMap = ref<Record<string, Progress>>({})
+let seriesInterval: ReturnType<typeof setInterval> | null = null
+
 function storageKeyForItem() {
     return `downloadJob:${props.item?.url || props.item?.title}`
 }
@@ -85,18 +90,30 @@ function startPolling(id: string) {
 }
 
 onMounted(() => {
-    if (isSeries.value) return
     if (typeof window === 'undefined') return
+    if (!isSeries.value) {
+        try {
+            const stored = sessionStorage.getItem(storageKeyForItem())
+            if (stored) {
+                startPolling(stored)
+            }
+        } catch {}
+        return
+    }
+    // For series: resume any stored episode job mappings
     try {
-        const stored = sessionStorage.getItem(storageKeyForItem())
-        if (stored) {
-            startPolling(stored)
+        const raw = sessionStorage.getItem(seriesStorageKey())
+        if (raw) {
+            const parsed = JSON.parse(raw || '{}') as Record<string, string>
+            jobIdsByEpisode.value = parsed || {}
+            if (Object.keys(jobIdsByEpisode.value).length > 0) startSeriesPolling()
         }
     } catch {}
 })
 
 onBeforeUnmount(() => {
     clearStatusInterval()
+    clearSeriesInterval()
 })
 
 function clearSelections() {
@@ -144,19 +161,108 @@ async function handleDownload() {
                 { number: season, episodes: episodesToDownload },
             ],
         }
-        await $fetch('/api/files/download', { method: 'POST', body: payload })
+        const resp = await $fetch<{ jobIds?: string[]; queued?: number }>('/api/files/download', { method: 'POST', body: payload })
+        const returned = Array.isArray(resp?.jobIds) ? resp.jobIds : []
+        if (returned && returned.length > 0) {
+            // Map jobIds to episodes by order (truncate to shortest length to be safe)
+            const limit = Math.min(episodesToDownload.length, returned.length)
+            for (let i = 0; i < limit; i++) {
+                const ep = episodesToDownload[i]
+                const id = returned[i]
+                if (!ep || !id) continue
+                const key = `${ep.title}|${ep.url}`
+                jobIdsByEpisode.value[key] = id
+            }
+            // Persist and start polling
+            persistSeriesJobs()
+            startSeriesPolling()
+        }
     } catch (e) {
         // swallow for now; optionally surface a toast
         console.error(e)
     }
 }
+
+function seriesStorageKey() {
+    return `downloadJobs:${props.item?.url || props.item?.title}`
+}
+
+function persistSeriesJobs() {
+    if (typeof window === 'undefined') return
+    try { sessionStorage.setItem(seriesStorageKey(), JSON.stringify(jobIdsByEpisode.value || {})) } catch {}
+}
+
+function clearSeriesInterval() {
+    if (seriesInterval) {
+        clearInterval(seriesInterval)
+        seriesInterval = null
+    }
+}
+
+function maybeCleanupSeriesStorage() {
+    if (typeof window === 'undefined') return
+    if (Object.keys(jobIdsByEpisode.value || {}).length === 0) {
+        try { sessionStorage.removeItem(seriesStorageKey()) } catch {}
+    } else {
+        persistSeriesJobs()
+    }
+}
+
+function startSeriesPolling() {
+    if (seriesInterval) return
+    seriesInterval = setInterval(async () => {
+        const entries = Object.entries(jobIdsByEpisode.value || {})
+        if (entries.length === 0) {
+            clearSeriesInterval()
+            maybeCleanupSeriesStorage()
+            return
+        }
+        await Promise.all(entries.map(async ([epKey, id]) => {
+            try {
+                const res = await $fetch.raw(`/api/files/status/${id}`)
+                if ((res && res.status === 204) || !(res && (res as any)._data)) {
+                    // No status -> remove mapping
+                    delete jobIdsByEpisode.value[epKey]
+                    delete episodeProgressMap.value[epKey]
+                    return
+                }
+                const status = (res as any)._data as Progress
+                episodeProgressMap.value[epKey] = status
+                if (status.state === 'completed' || status.state === 'failed') {
+                    // Stop tracking this job id but keep final progress in map
+                    delete jobIdsByEpisode.value[epKey]
+                }
+            } catch {
+                // transient failure; stop tracking this id for now
+                delete jobIdsByEpisode.value[epKey]
+            }
+        }))
+        maybeCleanupSeriesStorage()
+    }, 1000)
+}
+
+const seriesProgressPercent = computed(() => {
+    const values = Object.values(episodeProgressMap.value || {})
+    if (values.length === 0) return null
+    const sum = values.reduce((acc, p) => acc + (p.progress || 0), 0)
+    return Math.round(sum / values.length)
+})
+
+const seriesState = computed(() => {
+    const values = Object.values(episodeProgressMap.value || {})
+    if (values.length === 0) return null
+    if (values.every(v => v.state === 'completed')) return 'completed' as const
+    if (values.some(v => v.state === 'downloading' || v.state === 'pending')) return 'downloading' as const
+    if (values.some(v => v.state === 'failed')) return 'failed' as const
+    return 'downloading' as const
+})
 </script>
 
 <template>
     <Header :item="item">
         <div v-if="isSeries" class="space-y-3">
             <SeasonTabs :seasons="seasonNumbers" v-model:selected="selectedSeason" />
-            <EpisodeList :episodes="currentEpisodes" v-model:selected-keys="selectedKeys" />
+            <EpisodeList :episodes="currentEpisodes" v-model:selected-keys="selectedKeys" :progress-map="episodeProgressMap" />
         </div>
     </Header>
 
@@ -165,6 +271,8 @@ async function handleDownload() {
         :selected-episodes="selectedEpisodes"
         :selected-season="selectedSeason"
         :progress="progress"
+        :series-percent="seriesProgressPercent"
+        :series-state="seriesState"
         @download="handleDownload"
         @clear="clearSelections"
     />
