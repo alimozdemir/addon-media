@@ -5,7 +5,7 @@ import { createWriteStream } from 'node:fs'
 import type { Progress } from '../../types/progress'
 
 export const downloadQueue = new PQueue({
-    concurrency: 2, // number of parallel downloads
+    concurrency: 1, // number of parallel downloads
     autoStart: true
 })
 

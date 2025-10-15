@@ -44,7 +44,29 @@ export default defineEventHandler(async (event) => {
         const jobId = startDownload(body.url, targetPath);
 
         return { jobId };
-    }    
+    }
+
+    // Simple tv-series support: queue each provided episode to download into the root folder
+    if (body.movieType === 'tv-series') {
+        const seasons = (body as any).seasons;
+        if (!Array.isArray(seasons)) return { jobIds: [], queued: 0 };
+
+        const jobIds: string[] = [];
+        for (const season of seasons) {
+            const episodes = Array.isArray(season?.episodes) ? season.episodes : [];
+            for (const ep of episodes) {
+                if (!ep?.url) continue;
+                const title = ep.title || body.title;
+                const ext = getUrlExtension(ep.url) || 'mp4';
+                const fileName = `${sanitizeName(title)}.${ext}`;
+                const targetPath = join(mediaRoot, fileName);
+                const id = startDownload(ep.url, targetPath);
+                jobIds.push(id);
+            }
+        }
+
+        return { jobIds, queued: jobIds.length };
+    }
 
 
 
