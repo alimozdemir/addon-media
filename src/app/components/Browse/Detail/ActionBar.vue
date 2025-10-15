@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import type { PlaylistEntry } from '~/composables/usePlaylist'
 
-const props = defineProps<{ isSeries: boolean; selectedEpisodes: PlaylistEntry[]; selectedSeason: string | null }>()
+const props = defineProps<{
+    isSeries: boolean;
+    selectedEpisodes: PlaylistEntry[];
+    selectedSeason: string | null;
+    downloadState?: 'pending' | 'downloading' | 'completed' | 'failed' | null;
+    downloadProgress?: number | null;
+}>()
 const emit = defineEmits<{ (e: 'download'): void; (e: 'clear'): void }>()
 
 function extractEpisodeNumber(title: string): string | null {
@@ -41,6 +47,15 @@ const actionLabel = computed(() => {
             <div class="p-3 flex items-center gap-2">
                 <button type="button" class="ml-auto px-4 h-10 rounded bg-primary text-primary-foreground text-sm active:scale-95 transition cursor-pointer" @click="emit('download')">{{ actionLabel }}</button>
             </div>
+            <!-- Movie download progress/state (mobile) -->
+            <div v-if="!isSeries && props.downloadState" class="px-3 pb-2">
+                <div class="h-2 w-full bg-muted rounded overflow-hidden">
+                    <div class="h-full bg-primary" :style="{ width: `${Math.max(0, Math.min(100, props.downloadProgress || 0))}%` }"></div>
+                </div>
+                <div class="mt-1 text-xs text-muted-foreground capitalize">
+                    {{ props.downloadState }}<span v-if="props.downloadState !== 'completed' && props.downloadState"> • {{ Math.round(props.downloadProgress || 0) }}%</span>
+                </div>
+            </div>
             <div v-if="isSeries" class="px-3 pb-3 text-xs text-muted-foreground flex items-center gap-2">
                 <button type="button" class="underline" v-if="selectedEpisodes.length > 0" @click="emit('clear')">Clear selections</button>
                 <span v-if="selectedEpisodes.length > 0">• {{ selectedEpisodes.length }} selected</span>
@@ -51,9 +66,18 @@ const actionLabel = computed(() => {
     <!-- Desktop sticky action panel -->
     <div class="hidden md:block mt-6">
         <div class="rounded-[--radius] border border-border bg-card p-3 flex items-center gap-3">
-            <div class="text-sm text-muted-foreground" v-if="isSeries">
-                <span v-if="selectedEpisodes.length === 0">Season {{ selectedSeason || '' }}</span>
-                <span v-else>{{ selectedEpisodes.length }} episode(s) selected</span>
+            <div class="text-sm text-muted-foreground">
+                <template v-if="isSeries">
+                    <span v-if="selectedEpisodes.length === 0">Season {{ selectedSeason || '' }}</span>
+                    <span v-else>{{ selectedEpisodes.length }} episode(s) selected</span>
+                </template>
+                <template v-else-if="props.downloadState">
+                    <span class="capitalize">{{ props.downloadState }}</span>
+                    <span v-if="props.downloadState !== 'completed'"> • {{ Math.round(props.downloadProgress || 0) }}%</span>
+                </template>
+            </div>
+            <div v-if="!isSeries && props.downloadState" class="w-40 h-2 bg-muted rounded overflow-hidden">
+                <div class="h-full bg-primary" :style="{ width: `${Math.max(0, Math.min(100, props.downloadProgress || 0))}%` }"></div>
             </div>
             <div class="ml-auto flex items-center gap-2">
                 <button type="button" v-if="isSeries && selectedEpisodes.length > 0" class="px-3 h-9 rounded text-sm border border-border hover:bg-muted" @click="emit('clear')">Clear</button>

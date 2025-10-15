@@ -32,6 +32,75 @@ const selectedEpisodes = computed(() => {
     return currentEpisodes.value.filter(ep => keys.has(`${ep.title}|${ep.url}`))
 })
 
+// Download tracking for movies (non-series)
+const jobId = ref<string | null>(null)
+const downloadState = ref<'pending' | 'downloading' | 'completed' | 'failed' | null>(null)
+const downloadProgress = ref<number>(0)
+let statusInterval: ReturnType<typeof setInterval> | null = null
+
+function storageKeyForItem() {
+    return `downloadJob:${props.item?.url || props.item?.title}`
+}
+
+function clearStatusInterval() {
+    if (statusInterval) {
+        clearInterval(statusInterval)
+        statusInterval = null
+    }
+}
+
+function startPolling(id: string) {
+    clearStatusInterval()
+    jobId.value = id
+    if (typeof window !== 'undefined') {
+        try { sessionStorage.setItem(storageKeyForItem(), id) } catch {}
+    }
+    statusInterval = setInterval(async () => {
+        try {
+            const res = await $fetch.raw(`/api/files/status/${id}`)
+            // If server returns 204 or an empty body, treat as no status and clear session key
+            if ((res && res.status === 204) || !(res && (res as any)._data)) {
+                if (typeof window !== 'undefined') {
+                    try { sessionStorage.removeItem(storageKeyForItem()) } catch {}
+                }
+                jobId.value = null
+                downloadState.value = null
+                downloadProgress.value = 0
+                clearStatusInterval()
+                return
+            }
+
+            const status = (res as any)._data as { state: 'pending' | 'downloading' | 'completed' | 'failed'; progress?: number; error?: string }
+            downloadState.value = status.state
+            downloadProgress.value = typeof status.progress === 'number' ? status.progress : downloadProgress.value
+            if (status.state === 'completed' || status.state === 'failed') {
+                clearStatusInterval()
+                if (typeof window !== 'undefined') {
+                    try { sessionStorage.removeItem(storageKeyForItem()) } catch {}
+                }
+            }
+        } catch (err) {
+            // Stop polling on failures (keep session key; may retry on next mount)
+            clearStatusInterval()
+        }
+    }, 1000)
+}
+
+onMounted(() => {
+    if (isSeries.value) return
+    if (typeof window === 'undefined') return
+    try {
+        const stored = sessionStorage.getItem(storageKeyForItem())
+        if (stored) {
+            startPolling(stored)
+        }
+    } catch {}
+})
+
+onBeforeUnmount(() => {
+    clearStatusInterval()
+})
+
 function clearSelections() {
     selectedKeys.value = []
 }
@@ -47,15 +116,8 @@ async function handleDownload() {
                 logo: props.item.logo,
                 movieType: props.item.movieType || 'film',
             }
-            const { jobId } = await $fetch<{ jobId: string }>('/api/files/download', { method: 'POST', body: payload })
-            if (jobId) {
-                const  interval = setInterval(async () => {
-                    const status = await $fetch<{ state: 'pending' | 'downloading' | 'completed' | 'failed'; progress?: number; error?: string }>(`/api/files/status/${jobId}`)
-                    if (status.state === 'completed') {
-                        clearInterval(interval)
-                    }
-                }, 1000)
-            }
+            const { jobId: id } = await $fetch<{ jobId: string }>('/api/files/download', { method: 'POST', body: payload })
+            if (id) startPolling(id)
             return
         }
 
@@ -100,7 +162,15 @@ async function handleDownload() {
         </div>
     </Header>
 
-    <ActionBar :is-series="isSeries" :selected-episodes="selectedEpisodes" :selected-season="selectedSeason" @download="handleDownload" @clear="clearSelections" />
+    <ActionBar
+        :is-series="isSeries"
+        :selected-episodes="selectedEpisodes"
+        :selected-season="selectedSeason"
+        :download-state="downloadState"
+        :download-progress="downloadProgress"
+        @download="handleDownload"
+        @clear="clearSelections"
+    />
 </template>
 
 
