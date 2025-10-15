@@ -1,5 +1,6 @@
 import { computed } from 'vue'
-import { parse } from 'iptv-playlist-parser'
+import PlaylistParser from 'iptv-playlist-parser'
+const { parse } = PlaylistParser
 import { useSearch } from '~/composables/useSearch'
 
 export type PlaylistEntry = {
