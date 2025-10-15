@@ -37,7 +37,7 @@ function toggle(ep: PlaylistEntry) {
                         <div class="text-xs text-muted-foreground">
                             <template v-if="props.progressMap && props.progressMap[episodeKey(ep)]">
                                 <span class="capitalize">{{ props.progressMap[episodeKey(ep)]!.state }}</span>
-                                <span v-if="props.progressMap[episodeKey(ep)]!.state !== 'completed'"> • {{ Math.round(props.progressMap[episodeKey(ep)].progress || 0) }}%</span>
+                                <span v-if="props.progressMap[episodeKey(ep)]!.state !== 'completed'"> • {{ Math.round(props.progressMap[episodeKey(ep)]!.progress || 0) }}%</span>
                             </template>
                             <template v-else>
                                 {{ ep.groupTitle }}
