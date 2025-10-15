@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PlaylistEntry } from '~/composables/usePlaylist'
+import type { Progress } from '~~/types/progress'
 import Header from './Header.vue'
 import SeasonTabs from './SeasonTabs.vue'
 import EpisodeList from './EpisodeList.vue'
@@ -34,8 +35,7 @@ const selectedEpisodes = computed(() => {
 
 // Download tracking for movies (non-series)
 const jobId = ref<string | null>(null)
-const downloadState = ref<'pending' | 'downloading' | 'completed' | 'failed' | null>(null)
-const downloadProgress = ref<number>(0)
+const progress = ref<Progress | null>(null)
 let statusInterval: ReturnType<typeof setInterval> | null = null
 
 function storageKeyForItem() {
@@ -64,15 +64,13 @@ function startPolling(id: string) {
                     try { sessionStorage.removeItem(storageKeyForItem()) } catch {}
                 }
                 jobId.value = null
-                downloadState.value = null
-                downloadProgress.value = 0
+                progress.value = null
                 clearStatusInterval()
                 return
             }
 
-            const status = (res as any)._data as { state: 'pending' | 'downloading' | 'completed' | 'failed'; progress?: number; error?: string }
-            downloadState.value = status.state
-            downloadProgress.value = typeof status.progress === 'number' ? status.progress : downloadProgress.value
+            const status = (res as any)._data as Progress
+            progress.value = status
             if (status.state === 'completed' || status.state === 'failed') {
                 clearStatusInterval()
                 if (typeof window !== 'undefined') {
@@ -166,8 +164,7 @@ async function handleDownload() {
         :is-series="isSeries"
         :selected-episodes="selectedEpisodes"
         :selected-season="selectedSeason"
-        :download-state="downloadState"
-        :download-progress="downloadProgress"
+        :progress="progress"
         @download="handleDownload"
         @clear="clearSelections"
     />
