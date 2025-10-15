@@ -20,7 +20,11 @@ export function startDownload(url: string, path: string) {
     downloadQueue.add(async () => {
         jobStatuses.set(jobId, { state: 'downloading', progress: 0 })
 
-        const stream = got.stream(url)
+        const stream = got.stream(url, {
+            headers: {
+                'user-agent': 'VLC/3.0.20 LibVLC/3.0.20'
+            }
+        })
         let downloaded = 0
         let total = 0
 

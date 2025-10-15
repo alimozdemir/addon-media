@@ -3,6 +3,7 @@ import { useFileUtils } from '../../utils/useFileUtils';
 import { PlaylistEntry } from '~~/app/composables/usePlaylist';
 import { startDownload } from '~~/server/plugins/job';
 import { dirname, extname, join } from 'node:path';
+import { mkdir } from 'node:fs/promises'
 
 function sanitizeName(input: string): string {
     const trimmed = (input || '').trim();
@@ -59,7 +60,11 @@ export default defineEventHandler(async (event) => {
                 const title = ep.title || body.title;
                 const ext = getUrlExtension(ep.url) || 'mp4';
                 const fileName = `${sanitizeName(title)}.${ext}`;
-                const targetPath = join(mediaRoot, fileName);
+                const seriesDir = sanitizeName(body.title);
+                const seasonRaw = `${season?.number ?? ''}`;
+                const seasonLabel = `Season ${seasonRaw.padStart(2, '0')}`;
+                const targetPath = join(mediaRoot, seriesDir, seasonLabel, fileName);
+                await mkdir(dirname(targetPath), { recursive: true });
                 const id = startDownload(ep.url, targetPath);
                 jobIds.push(id);
             }
