@@ -12,22 +12,22 @@ function handleSubmit(val: string) {
 
 <template>
     <div class="sticky top-0 z-10 py-4 bg-card border-b border-border">
-        <div class="py-2 flex items-center gap-2">
-            <div class="inline-flex items-center gap-1 p-1 rounded-[--radius] border border-border bg-background">
+        <div class="py-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div class="inline-flex items-center gap-1 p-1 rounded-[--radius] border border-border bg-background overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
                 <button type="button"
-                    class="px-2 h-8 rounded text-sm"
+                    class="px-2 h-8 rounded text-sm whitespace-nowrap"
                     :class="filter === 'all' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted'"
                     @click="filter = 'all'">All</button>
                 <button type="button"
-                    class="px-2 h-8 rounded text-sm"
+                    class="px-2 h-8 rounded text-sm whitespace-nowrap"
                     :class="filter === 'film' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted'"
                     @click="filter = 'film'">Film</button>
                 <button type="button"
-                    class="px-2 h-8 rounded text-sm"
+                    class="px-2 h-8 rounded text-sm whitespace-nowrap"
                     :class="filter === 'tv-series' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted'"
                     @click="filter = 'tv-series'">TV Series</button>
             </div>
-            <div class="ml-auto w-full max-w-md">
+            <div class="w-full sm:ml-auto sm:max-w-md">
                 <SearchInput v-model="query" @submit="handleSubmit" />
             </div>
         </div>

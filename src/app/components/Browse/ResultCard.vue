@@ -13,8 +13,8 @@ const slug = computed(() => (props.item.title || '').toLowerCase())
         </div>
         <div class="p-3 space-y-1">
             <div class="text-sm font-medium line-clamp-2">{{ item.title }}</div>
-            <div class="text-xs text-muted-foreground">{{ item.groupTitle }}</div>
-            <div class="text-xs text-muted-foreground" v-if="item.movieType">{{ item.movieType }}</div>
+            <div class="text-xs text-muted-foreground truncate">{{ item.groupTitle }}</div>
+            <div class="text-xs text-muted-foreground truncate" v-if="item.movieType">{{ item.movieType }}</div>
         </div>
     </NuxtLink>
 </template>

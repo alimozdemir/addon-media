@@ -9,7 +9,7 @@ defineProps<{ items: PlaylistEntry[]; loading?: boolean }>()
     <div class="mt-4">
         <div v-if="loading" class="text-sm text-muted-foreground">Searching...</div>
         <div v-else-if="!items?.length" class="text-sm text-muted-foreground">No results</div>
-        <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div v-else class="grid gap-3 grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             <ResultCard v-for="it in items" :key="it.title + it.url" :item="it" />
         </div>
     </div>
