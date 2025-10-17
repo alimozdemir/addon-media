@@ -1,9 +1,11 @@
-import { createError, readBody } from 'h3';
+import { readBody } from 'h3';
 import { useFileUtils } from '../../utils/useFileUtils';
 import { PlaylistEntry } from '~~/app/composables/usePlaylist';
 import { startDownload } from '~~/server/plugins/job';
-import { dirname, extname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { mkdir } from 'node:fs/promises'
+import getConfig from "../config.get";
+
 
 function sanitizeName(input: string): string {
     const trimmed = (input || '').trim();
@@ -36,11 +38,17 @@ export default defineEventHandler(async (event) => {
     const { allowedRoots } = useFileUtils();
     const mediaRoot = allowedRoots.media;
 
+    const config = await getConfig(event) as { movie_folder?: string, tv_series_folder?: string };
+    const movieFolder = config.movie_folder || 'Movies';
+    const tvSeriesFolder = config.tv_series_folder || 'TV Series';
+
     if (body.movieType === 'film') {
         const ext = getUrlExtension(body.url) || 'mp4';
         const fileName = `${sanitizeName(body.title)}.${ext}`;
 
-        const targetPath = join(mediaRoot, fileName);
+        const targetPath = join(mediaRoot, movieFolder, fileName);
+        
+        await mkdir(join(mediaRoot, movieFolder), { recursive: true });
 
         const jobId = startDownload(body.url, targetPath);
 
@@ -63,7 +71,7 @@ export default defineEventHandler(async (event) => {
                 const seriesDir = sanitizeName(body.title);
                 const seasonRaw = `${season?.number ?? ''}`;
                 const seasonLabel = `Season ${seasonRaw.padStart(2, '0')}`;
-                const targetPath = join(mediaRoot, seriesDir, seasonLabel, fileName);
+                const targetPath = join(mediaRoot, tvSeriesFolder, seriesDir, seasonLabel, fileName);
                 await mkdir(dirname(targetPath), { recursive: true });
                 const id = startDownload(ep.url, targetPath);
                 jobIds.push(id);

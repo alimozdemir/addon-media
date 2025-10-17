@@ -1,7 +1,7 @@
 {
     "name": "Home Assistant Add-on: Media",
     "description": "Media add-on for Home Assistant",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "slug": "media",
     "init": false,
     "panel_icon": "mdi:music",
@@ -25,9 +25,13 @@
         "media:rw"
     ],
     "options": {
-        "playlist_url": ""
+        "playlist_url": "",
+        "movie_folder": "Movies",
+        "tv_series_folder": "TV Series"
     },
     "schema": {
-        "playlist_url": "str?"
+        "playlist_url": "str?",
+        "movie_folder": "str?",
+        "tv_series_folder": "str?"
     }
 }
