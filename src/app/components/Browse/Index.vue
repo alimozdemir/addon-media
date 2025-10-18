@@ -133,9 +133,9 @@ const { stop: stopObserver } = useIntersectionObserver(
 </script>
 <template>
     <section>
-        <TopBar v-model:query="query" v-model:filter="filter" @submit="performSearch" />
+        <TopBar v-model:query="query" v-model:filter="filter" @submit="performSearch" class="hidden sm:block" />
         <div class="mt-2">
-            <GroupFilter v-model="groups" :options="groupOptions" />
+            <GroupFilter v-model="groups" v-model:query="query" v-model:filter="filter" :options="groupOptions" @submit="performSearch" />
         </div>
 
         <Results :items="pagedResults" :loading="loading" />
