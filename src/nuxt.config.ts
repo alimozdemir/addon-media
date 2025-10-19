@@ -48,5 +48,5 @@ export default defineNuxtConfig({
     ],
   },
 
-  modules: ['@vueuse/nuxt'],
+  modules: ['@vueuse/nuxt', '@vite-pwa/nuxt'],
 })
