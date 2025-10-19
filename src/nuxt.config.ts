@@ -51,7 +51,7 @@ export default defineNuxtConfig({
   modules: ['@vueuse/nuxt', '@vite-pwa/nuxt'],
 
   pwa: {
-    strategies: 'injectManifest',
+    strategies: 'generateSW',
     registerType: 'autoUpdate',
     manifest: {
       name: 'Media',
