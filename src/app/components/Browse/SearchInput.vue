@@ -15,10 +15,12 @@ function handleKeydown(e: KeyboardEvent) {
         <div class="flex-1">
             <input
                 v-model.trim="model"
-                type="text"
+                type="search"
+                inputmode="search"
+                enterkeyhint="search"
                 placeholder="Search by title..."
                 @keydown="handleKeydown"
-                class="w-full h-10 px-3 rounded-[--radius] border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-ring"
+                class="w-full h-10 px-3 rounded-[--radius] border border-border bg-background text-base sm:text-sm outline-none focus:ring-2 focus:ring-ring"
             />
         </div>
     </div>

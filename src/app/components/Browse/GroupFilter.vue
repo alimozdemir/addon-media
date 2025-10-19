@@ -64,10 +64,10 @@ const visibleOptions = computed(() => expanded.value ? props.options : props.opt
   <Teleport to="body">
     <div v-if="showOverlay" class="sm:hidden fixed inset-0 z-50">
       <div class="absolute inset-0 bg-black/50" @click="showOverlay = false"></div>
-      <div class="absolute inset-x-0 top-0 bottom-0 bg-card rounded-t-2xl p-4 overflow-y-auto">
+      <div class="absolute inset-x-0 top-0 bottom-0 bg-card p-4 overflow-y-auto">
         <div class="flex items-center justify-between mb-3">
           <div class="text-sm font-medium">Filters</div>
-          <button type="button" class="px-3 h-8 rounded border border-border text-sm text-muted-foreground hover:bg-muted" @click="showOverlay = false">Close</button>
+          <button type="button" class="px-3 h-8 rounded border border-border text-sm bg-primary text-primary-foreground hover:bg-muted" @click="showOverlay = false">Close</button>
         </div>
 
         <!-- Search first -->
