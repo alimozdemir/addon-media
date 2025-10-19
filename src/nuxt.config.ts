@@ -49,4 +49,41 @@ export default defineNuxtConfig({
   },
 
   modules: ['@vueuse/nuxt', '@vite-pwa/nuxt'],
+
+  pwa: {
+    strategies: 'injectManifest',
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'Media',
+      short_name: 'HomeMedia',
+      theme_color: '#ffffff',
+      icons: [
+        {
+          src: 'icon.svg',
+          sizes: '192x192',
+          type: 'image/svg+xml',
+        },
+        {
+          src: 'icon.svg',
+          sizes: '512x512',
+          type: 'image/svg+xml',
+        },
+        {
+          src: 'icon.svg',
+          sizes: '512x512',
+          type: 'image/svg+xml',
+          purpose: 'any maskable',
+        },
+      ],
+    },
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+    },
+    injectManifest: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+    },
+    client: {
+      installPrompt: true
+    },
+  }
 })

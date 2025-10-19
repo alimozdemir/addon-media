@@ -6,6 +6,7 @@ import Update from '~/components/Update.vue'
   <NuxtLayout>
     <NuxtPwaManifest />
     <Update />
+    <NuxtLoadingIndicator />
     <NuxtPage />
   </NuxtLayout>
 </template>
