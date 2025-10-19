@@ -20,6 +20,7 @@ declare module 'vue' {
     IMinus: typeof import('~icons/ph/minus')['default']
     IPlus: typeof import('~icons/ph/plus')['default']
     IQuestion: typeof import('~icons/ph/question')['default']
+    IX: typeof import('~icons/ph/x')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

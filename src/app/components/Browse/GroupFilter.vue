@@ -9,6 +9,7 @@ const props = defineProps<{ options: string[] }>()
 
 const expanded = ref(false)
 const showOverlay = ref(false)
+const hasActiveFilters = computed(() => query.value.trim().length > 0 || filter.value !== 'all' || groups.value.length > 0)
 
 function toggleGroup(g: string) {
   const idx = groups.value.indexOf(g)
@@ -19,6 +20,13 @@ function toggleGroup(g: string) {
 function handleSubmit(val: string) {
   emit('submit', val)
   showOverlay.value = false
+}
+
+function clearAll() {
+  query.value = ''
+  filter.value = 'all'
+  if (groups.value.length) groups.value = []
+  emit('submit', '')
 }
 
 const visibleOptions = computed(() => expanded.value ? props.options : props.options.slice(0, 3))
@@ -47,9 +55,28 @@ const visibleOptions = computed(() => expanded.value ? props.options : props.opt
       <i-minus v-else />
       <span>{{ expanded ? 'Less' : 'More' }}</span>
     </button>
+    <div class="mx-1 h-5 w-px bg-border"></div>
+    <button
+      type="button"
+      class="px-2 h-7 rounded-full border border-border text-xs text-muted-foreground hover:bg-muted"
+      @click="clearAll"
+    >
+      Clear
+    </button>
   </div>
 
   <!-- Mobile: Floating action button to open overlay -->
+  <button
+    v-if="hasActiveFilters"
+    type="button"
+    class="sm:hidden fixed bottom-20 right-4 z-40 w-12 h-12 rounded-full shadow-lg bg-background border border-border text-foreground flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    @click="clearAll"
+    aria-label="Clear filters"
+  >
+    <i-x class="w-5 h-5" />
+    <span class="sr-only">Clear filters</span>
+  </button>
+
   <button
     type="button"
     class="sm:hidden fixed bottom-4 right-4 z-40 w-12 h-12 rounded-full shadow-lg bg-primary text-primary-foreground flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -67,7 +94,10 @@ const visibleOptions = computed(() => expanded.value ? props.options : props.opt
       <div class="absolute inset-x-0 top-0 bottom-0 bg-card p-4 overflow-y-auto">
         <div class="flex items-center justify-between mb-3">
           <div class="text-sm font-medium">Filters</div>
-          <button type="button" class="px-3 h-8 rounded border border-border text-sm bg-primary text-primary-foreground hover:bg-muted" @click="showOverlay = false">Close</button>
+          <div class="inline-flex items-center gap-2">
+            <button type="button" class="px-3 h-8 rounded border border-border text-sm text-muted-foreground hover:bg-muted" @click="clearAll">Clear</button>
+            <button type="button" class="px-3 h-8 rounded border border-border text-sm bg-primary text-primary-foreground hover:bg-muted" @click="showOverlay = false">Close</button>
+          </div>
         </div>
 
         <!-- Search first -->

@@ -13,7 +13,7 @@ function handleSubmit(val: string) {
 <template>
     <div class="sticky top-0 z-10 py-4 bg-card border-b border-border">
         <div class="py-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div class="inline-flex items-center gap-1 p-1 rounded-[--radius] border border-border bg-background overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
+            <div class="inline-flex items-center gap-1 p-1 rounded-[--radius] border border-border bg-background overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-2">
                 <button type="button"
                     class="px-2 h-8 rounded text-sm whitespace-nowrap"
                     :class="filter === 'all' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted'"
