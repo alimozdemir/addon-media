@@ -25,7 +25,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <section class="py-4">
+    <section class="py-4 mb-20">
         <div class="mb-4">
             <NuxtLink to="/browse" class="text-sm text-muted-foreground hover:underline">← Back to browse</NuxtLink>
         </div>

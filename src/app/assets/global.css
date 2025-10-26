@@ -27,9 +27,10 @@
   --color-muted: oklch(94% 0 0);
   --color-muted-foreground: oklch(55% 0 0);
 
-  /* Accent (subtle) */
-  --color-accent: oklch(93% 0 0);
-  --color-accent-foreground: var(--color-foreground);
+  /* Accent (violet) */
+  /* A calm violet accent for chips, badges, hovers, etc. */
+  --color-accent: oklch(85% 0.12 305);
+  --color-accent-foreground: oklch(22% 0.03 305);
 
   /* Destructive (kept grayscale per request) */
   --color-destructive: oklch(35% 0 0);
@@ -38,7 +39,8 @@
   /* UI chrome */
   --color-border: oklch(90% 0 0);
   --color-input: var(--color-border);
-  --color-ring: oklch(30% 0 0);
+  /* Match focus ring to the accent hue for better affordance */
+  --color-ring: oklch(55% 0.14 305);
 }
 
 /* Base application colors */

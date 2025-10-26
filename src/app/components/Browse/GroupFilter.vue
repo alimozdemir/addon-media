@@ -34,13 +34,13 @@ const visibleOptions = computed(() => expanded.value ? props.options : props.opt
 
 <template>
   <!-- Desktop/Tablet: show inline group chips as before -->
-  <div class="hidden sm:flex items-center gap-1 flex-nowrap overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
+  <div class="hidden sm:flex items-center gap-1 flex-wrap overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
     <button
       v-for="g in visibleOptions"
       :key="g"
       type="button"
-      class="px-2 h-7 rounded-full border text-xs whitespace-nowrap max-w-[12rem] truncate"
-      :class="groups.includes(g) ? 'bg-muted border-border text-foreground' : 'bg-background border-border text-muted-foreground hover:bg-muted'"
+      class="px-2 h-7 rounded-full border text-xs whitespace-nowrap"
+      :class="groups.includes(g) ? 'bg-foreground border-border text-white' : 'bg-background border-border text-muted-foreground hover:bg-muted'"
       @click="toggleGroup(g)"
     >
       <span class="inline-block max-w-full truncate align-middle">{{ g }}</span>
@@ -69,7 +69,7 @@ const visibleOptions = computed(() => expanded.value ? props.options : props.opt
   <button
     v-if="hasActiveFilters"
     type="button"
-    class="sm:hidden fixed bottom-20 right-4 z-40 w-12 h-12 rounded-full shadow-lg bg-background border border-border text-foreground flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    class="sm:hidden fixed bottom-20 right-4 z-40 w-12 h-12 rounded-full shadow-lg bg-accent border border-border text-foreground flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     @click="clearAll"
     aria-label="Clear filters"
   >
@@ -126,7 +126,7 @@ const visibleOptions = computed(() => expanded.value ? props.options : props.opt
             :key="g"
             type="button"
             class="px-3 h-8 rounded-full border text-sm whitespace-nowrap max-w-[16rem] truncate"
-            :class="groups.includes(g) ? 'bg-muted border-border text-foreground' : 'bg-background border-border text-muted-foreground hover:bg-muted'"
+            :class="groups.includes(g) ? 'bg-foreground border-border text-white' : 'bg-background border-border text-muted-foreground hover:bg-muted'"
             @click="toggleGroup(g)"
           >
             <span class="inline-block max-w-full truncate align-middle">{{ g }}</span>

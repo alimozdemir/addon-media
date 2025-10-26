@@ -8,6 +8,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    IArrowUo: typeof import('~icons/ph/arrow-uo')['default']
+    IArrowUp: typeof import('~icons/ph/arrow-up')['default']
     ICaretRight: typeof import('~icons/ph/caret-right')['default']
     ICompass: typeof import('~icons/ph/compass')['default']
     IDotsThreeVertical: typeof import('~icons/ph/dots-three-vertical')['default']

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const router = useRouter();
 onMounted(() => {
-    router.replace('/files');
+    router.replace('/browse');
 });
 </script>
 

@@ -2,7 +2,7 @@
 import type { PlaylistEntry } from '~/composables/usePlaylist'
 import ResultCard from './ResultCard.vue'
 
-defineProps<{ items: PlaylistEntry[]; loading?: boolean }>()
+defineProps<{ items: PlaylistEntry[]; loading?: boolean; loadingMore?: boolean }>()
 </script>
 
 <template>
@@ -12,6 +12,7 @@ defineProps<{ items: PlaylistEntry[]; loading?: boolean }>()
         <div v-else class="grid gap-3 grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             <ResultCard v-for="it in items" :key="it.title + it.url" :item="it" />
         </div>
+        <div v-if="loadingMore" class="text-sm text-muted-foreground my-10">Loading more...</div>
     </div>
 </template>
 
